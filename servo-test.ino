@@ -34,10 +34,12 @@
 #define SERVOMAX  600 // minimalna długość impulsu (z 4096)
 #define SERVOMID  375 //(SERVOMAX+SERVOMIN)/2 // wartość wyśrodkowana
 // 450pul. - 180st. -> Xpul. - 62st. -> X = 155pul. (62st.) // a 60st. to 150pul.
-#define SERVOMIN_LEVEL0 225 // wg pomiarów - 62st. od pozycji środkowej (150+225-155 = 220)
-#define SERVOMAX_LEVEL0 525 // wg pomiarów - 62st. od pozycji środkowej (600-225+155 = 530)
-#define SERVOMIN_LEVEL1 225 // wg pomiarów - 62st. od pozycji środkowej (150+225-155 = 220)
-#define SERVOMAX_LEVEL1 525 // wg pomiarów - 62st. od pozycji środkowej (600-225+155 = 530)
+#define SERVOMIN_0 225 // wg pomiarów - 62st. od pozycji środkowej (150+225-155 = 220)
+#define SERVOMAX_0 525 // wg pomiarów - 62st. od pozycji środkowej (600-225+155 = 530)
+#define SERVOMIN_1 205
+#define SERVOMAX_1 545
+#define SERVOMIN_2 205
+#define SERVOMAX_2 545
 // ------------------------------------------------------
 #define BATTERY_CRITICAL 6.08
 #define BATTERY_MEDIUM 6.65
@@ -83,7 +85,7 @@ RobotState state = Initialising;
 BatteryState battState = BatteryOK;
 RobotCommand lastCommand = Stand;
 
-uint16_t pulselen = SERVOMID;			// długość impulsu wysyłanego do sterownika PWM (12bit)
+uint16_t pulselen/* = SERVOMID*/;		// długość impulsu wysyłanego do sterownika PWM (12bit)
 unsigned long timeNow = 0;
 unsigned long timeSaved = 0;
 
@@ -137,21 +139,21 @@ void servoInit() {
   servos.setPWM(SERVO_LEFT_REAR0NUM, 0, SERVOMID);
   servos.setPWM(SERVO_LEFT_MID0NUM, 0, SERVOMID);
 
-  servos.setPWM(SERVO_RIGHT_REAR1NUM, 0, SERVOMAX);
-  servos.setPWM(SERVO_RIGHT_REAR2NUM, 0, SERVOMAX);
-  servos.setPWM(SERVO_RIGHT_MID1NUM, 0, SERVOMAX);
-  servos.setPWM(SERVO_RIGHT_MID2NUM, 0, SERVOMAX);
+  servos.setPWM(SERVO_RIGHT_REAR1NUM, 0, SERVOMAX_1);
+  servos.setPWM(SERVO_RIGHT_REAR2NUM, 0, SERVOMAX_2);
+  servos.setPWM(SERVO_RIGHT_MID1NUM, 0, SERVOMAX_1);
+  servos.setPWM(SERVO_RIGHT_MID2NUM, 0, SERVOMAX_2);
 
-  servos.setPWM(SERVO_LEFT_FRONT1NUM, 0, SERVOMAX);
-  servos.setPWM(SERVO_LEFT_FRONT2NUM, 0, SERVOMAX);
+  servos.setPWM(SERVO_LEFT_FRONT1NUM, 0, SERVOMAX_1);
+  servos.setPWM(SERVO_LEFT_FRONT2NUM, 0, SERVOMAX_2);
 
-  servos.setPWM(SERVO_LEFT_REAR1NUM, 0, SERVOMIN);
-  servos.setPWM(SERVO_LEFT_REAR2NUM, 0, SERVOMIN);
-  servos.setPWM(SERVO_LEFT_MID1NUM, 0, SERVOMIN);
-  servos.setPWM(SERVO_LEFT_MID2NUM, 0, SERVOMIN);
+  servos.setPWM(SERVO_LEFT_REAR1NUM, 0, SERVOMIN_1);
+  servos.setPWM(SERVO_LEFT_REAR2NUM, 0, SERVOMIN_2);
+  servos.setPWM(SERVO_LEFT_MID1NUM, 0, SERVOMIN_1);
+  servos.setPWM(SERVO_LEFT_MID2NUM, 0, SERVOMIN_2);
 
-  servos.setPWM(SERVO_RIGHT_FRONT1NUM, 0, SERVOMIN);
-  servos.setPWM(SERVO_RIGHT_FRONT2NUM, 0, SERVOMIN);
+  servos.setPWM(SERVO_RIGHT_FRONT1NUM, 0, SERVOMIN_1);
+  servos.setPWM(SERVO_RIGHT_FRONT2NUM, 0, SERVOMIN_2);
 
   servoLeft.attach(SERVO_LEFT_FRONT0NUM);                       // inicjalizacja lewego serwa, podłączonego bezpośrednio do arduino
   servoLeft.write(90);                                          // ustawienie jego pozycji początkowej
@@ -627,5 +629,26 @@ void turningRightToStand() {
 }
 
 void initialPosToStand() {
-  //
+	for (pulselen = SERVOMIN; pulselen < SERVOMID; pulselen += 5) {
+		servoRight.write(map(SERVOMID, SERVOMIN, SERVOMAX, 120, 60));
+		servos.setPWM(SERVO_RIGHT_MID0NUM, 0, SERVOMID);
+		servos.setPWM(SERVO_RIGHT_REAR0NUM, 0, SERVOMID);
+		servoLeft.write(map(SERVOMID, SERVOMIN, SERVOMAX, 60, 120));
+		servos.setPWM(SERVO_LEFT_MID0NUM, 0, SERVOMID);
+		servos.setPWM(SERVO_LEFT_REAR0NUM, 0, SERVOMID);
+		
+		servos.setPWM(SERVO_RIGHT_FRONT1NUM, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMIN_1, SERVOMAX_1));
+		servos.setPWM(SERVO_RIGHT_MID1NUM, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMAX_1, SERVOMIN_1));
+		servos.setPWM(SERVO_RIGHT_REAR1NUM, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMAX_1, SERVOMIN_1));
+		servos.setPWM(SERVO_LEFT_FRONT1NUM, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMAX_1, SERVOMIN_1));
+		servos.setPWM(SERVO_LEFT_MID1NUM, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMIN_1, SERVOMAX_1));
+		servos.setPWM(SERVO_LEFT_REAR1NUM, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMIN_1, SERVOMAX_1));
+
+		servos.setPWM(SERVO_RIGHT_FRONT2NUM, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMIN_2, SERVOMAX_2));
+		servos.setPWM(SERVO_RIGHT_MID2NUM, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMAX_2, SERVOMIN_2));
+		servos.setPWM(SERVO_RIGHT_REAR2NUM, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMAX_2, SERVOMIN_2));
+		servos.setPWM(SERVO_LEFT_FRONT2NUM, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMAX_2, SERVOMIN_2));
+		servos.setPWM(SERVO_LEFT_MID2NUM, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMIN_2, SERVOMAX_2));
+		servos.setPWM(SERVO_LEFT_REAR2NUM, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMIN_2, SERVOMAX_2));
+	}
 }
