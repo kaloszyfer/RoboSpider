@@ -283,9 +283,9 @@ void setup() {
 bool isBatteryVoltageOkay() {
   if (readBatteryVoltage() < BATTERY_CRITICAL) {                // jeśli bardzo niskie napięcie baterii
     Serial.println("Error. Battery voltage level too low...");	// wyświetlam komunikat
-	battState = BatteryLow;										// ustawiam stan baterii
-	state = Inactive;											// oraz stan robota
-	return false;
+    battState = BatteryLow;										// ustawiam stan baterii
+    state = Inactive;											// oraz stan robota
+    return false;
   }
   return true;
 }
@@ -342,12 +342,13 @@ void loop() {
   robotMovement_CheckState();
 }
 
-// Odczytuje dane z portu szeregowego
+// Odczytuje dane z portu szeregowego (np. wiadomość "1example" zostanie przetworzona na wartość 1)
 void readSerialData() {
   if (Serial.available()) {
-    String data;
-    data += Serial.readString().charAt(0);
-    receivedData = data.toInt();            // zamieniam na integer i zapisuję do zmiennej
+    String data;												// tworzę pustą zmienną na dane
+    data += Serial.readString().charAt(0);						// odczytuję serię danych z portu szeregowego, a pierwszy znak dopisuję do zmiennej
+	receivedData = "";											// zeruję globalną zmienną na dane
+    receivedData += static_cast<char>(data.toInt());            // zamieniam dane zawierające jeden znak na integer, rzutuję na char i dopisuję do zmiennej globalnej
   }
 }
 
@@ -363,7 +364,7 @@ void checkBatteryVoltageEveryTenSeconds() {
   timeNow = millis();
   if (timeNow - timeSaved >= 10000UL) {         // jeśli minęło więcej niż 10 sekund -> sprawdzenie napięcia baterii
     timeSaved = timeNow;
-	checkBatteryState();
+    checkBatteryState();
   }
 }
 
@@ -388,7 +389,7 @@ void setLastCommandValue() {
   else {
     if (lastCommand != GoToInitialPos) {
       lastCommand = GoToInitialPos;
-	}
+    }
   }
 }
 
@@ -564,7 +565,10 @@ void stateCalibrating() {
 void stateInactive() {
   btSerial.end();
   Serial.end();
-  //załączenie flagi zatrzymania głównej pętli, odłączenie serw !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  isActive = false;
+  servoLeft.detach();
+  servoRight.detach();
+  Wire.end();
 }
 
 // Każe robotowi stanąć na kończynach, ustawia jego stan oraz wyświetla komunikat o zakończeniu inicjalizacji
