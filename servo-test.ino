@@ -329,8 +329,9 @@ void readSerialData() {
   if (Serial.available()) {
     String data;												// tworzę pustą zmienną na dane
     data += Serial.readString().charAt(0);						// odczytuję serię danych z portu szeregowego, a pierwszy znak dopisuję do zmiennej
-	receivedData = "";											// zeruję globalną zmienną na dane
+    receivedData = "";											// zeruję globalną zmienną na dane
     receivedData += static_cast<char>(data.toInt());            // zamieniam dane zawierające jeden znak na integer, rzutuję na char i dopisuję do zmiennej globalnej
+    Serial.println("I got some data!");
   }
 }
 
@@ -571,20 +572,23 @@ void stillStand() {
   leftSideUpDown(50, 0b111);
   rightSideUpDown(50, 0b111);
 }
-
+// NA CHWILE WPROWADZONO DELAY(2)!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! pamietac, aby usunac
 void standToFront() {
   for (int8_t i = 50; i < 75; ++i)	{
     leftSideFrontBack(i);
     rightSideFrontBack(i);
     leftSideUpDown(limitVal(i), 0b101);
     rightSideUpDown(limitVal(i), 0b010);
+    delay(2);
   }
+  delay(2);
   for (int8_t i = 75; i <= 100; ++i) {
     leftSideFrontBack(i);
     rightSideFrontBack(i);
 	int8_t j = map(i, 75, 100, 75, 50);
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
+    delay(2);
   }
   for (int8_t i = 100; i > 50; --i) {
     leftSideFrontBack(i);
@@ -592,13 +596,16 @@ void standToFront() {
     int8_t j = map(i, 100, 50, 50, 100);
     leftSideUpDown(limitVal(j), 0b010);
     rightSideUpDown(limitVal(j), 0b101);
+    delay(2);
   }
+  delay(2);
   for (int8_t i = 50; i >= 0; --i) {
     leftSideFrontBack(i);
     rightSideFrontBack(i);
     int8_t j = map(i, 50, 0, 100, 50);
     leftSideUpDown(limitVal(j), 0b010);
     rightSideUpDown(limitVal(j), 0b101);
+    delay(2);
   }
 }
 
@@ -637,6 +644,7 @@ void standToInitialPos() {
     rightSideFrontBack(50);
     leftSideUpDown(i, 0b111);
     rightSideUpDown(i, 0b111);
+    delay(2);
   }
 }
 
@@ -647,13 +655,16 @@ void stillFront() {
     int8_t j = /*map(i, 0, 50, 50, 100)*/i + 50;
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
+    delay(2);
   }
+  delay(2);
   for (int8_t i = 50; i <= 100; ++i) {
     leftSideFrontBack(i);
     rightSideFrontBack(i);
     int8_t j = /*map(i, 50, 100, 100, 50)*/150 - i;
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
+    delay(2);
   }
   for (int8_t i = 100; i > 50; --i) {
     leftSideFrontBack(i);
@@ -661,13 +672,16 @@ void stillFront() {
     int8_t j = /*map(i, 100, 50, 50, 100)*/150 - i;
     leftSideUpDown(limitVal(j), 0b010);
     rightSideUpDown(limitVal(j), 0b101);
+    delay(2);
   }
+  delay(2);
   for (int8_t i = 50; i >= 0; --i) {
     leftSideFrontBack(i);
     rightSideFrontBack(i);
     int8_t j = /*map(i, 50, 0, 100, 50)*/i + 50;
     leftSideUpDown(limitVal(j), 0b010);
     rightSideUpDown(limitVal(j), 0b101);
+    delay(2);
   }
 }
 
@@ -678,13 +692,16 @@ void frontToStand() {
 	int8_t j = /*map(i, 0, 25, 50, 75)*/i + 50;
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
+    delay(2);
   }
+  delay(2);
   for (int8_t i = 25; i <= 50; ++i) {
     leftSideFrontBack(i);
     rightSideFrontBack(i);
     int8_t j = /*map(i, 25, 50, 75, 50)*/100 - i;
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
+    delay(2);
   }
 }
 
@@ -747,6 +764,7 @@ void initialPosToStand() {
     rightSideFrontBack(50);
     leftSideUpDown(i, 0b111);
     rightSideUpDown(i, 0b111);
+    delay(2);
   }
 }
 
