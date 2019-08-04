@@ -299,39 +299,16 @@ double readBatteryVoltage() {
 void servoInit() {
   servos.begin();                                               // inicjalizacja sterownika PWM
   servos.setPWMFreq(60);                                        // analogowe serwa działają na około 60Hz
-
 // PRZYDAŁOBY SIĘ JESZCZE ZROBIĆ COŚ Z DZIWNYM RUCHEM SERW NA POCZĄTKU
-
+  delay(320);
   servoLeft.attach(SERVO_LEFT_FRONT0NUM);                       // inicjalizacja lewego serwa, podłączonego bezpośrednio do arduino
+  delay(20);
   servoRight.attach(SERVO_RIGHT_FRONT0NUM);                     // inicjalizacja prawego serwa, podłączonego bezpośrednio do arduino
-
-// można tutaj dorobić odczyt z eeprom, jeśli wynik inny niż 0, to initialPos, w przeciwnym razie standing
-// w innym miejscu zapis do eeprom
-
-  /*RightFrontBodyServo::setPosition(50);
-  RightFrontHipServo::setPosition(100);
-  RightFrontKneeServo::setPosition(0);
-  RightMiddleBodyServo::setPosition(50);
-  RightMiddleHipServo::setPosition(100);
-  RightMiddleKneeServo::setPosition(0);
-  RightRearBodyServo::setPosition(50);
-  RightRearHipServo::setPosition(100);
-  RightRearKneeServo::setPosition(0);
-  LeftFrontBodyServo::setPosition(50);
-  LeftFrontHipServo::setPosition(100);
-  LeftFrontKneeServo::setPosition(0);
-  LeftMiddleBodyServo::setPosition(50);
-  LeftMiddleHipServo::setPosition(100);
-  LeftMiddleKneeServo::setPosition(0);
-  LeftRearBodyServo::setPosition(50);
-  LeftRearHipServo::setPosition(100);
-  LeftRearKneeServo::setPosition(0);*/
-
+  delay(20);
   leftSideFrontBack(50);
   rightSideFrontBack(50);
   leftSideUpDown(100, 0b111);
   rightSideUpDown(100, 0b111);
-
   // pozycja początkowa: serwa najbliżej ciała robota wyśrodkowane, serwa "biodra" maksymalnie uniesione, serwa "kolana" maksymalnie opuszczone - kończyny "złożone"
 }
 
@@ -380,16 +357,20 @@ void checkBatteryState() {
   if (batteryVoltage < BATTERY_CRITICAL) {
     battState = BatteryLow;
     Serial.println("Warning. Low battery voltage level.");
+	//Buzzer, dłuższe piknięcie
   }
   else if (batteryVoltage < BATTERY_MEDIUM) {
     Serial.println("Medium battery voltage level. It is advised to turn off the robot and start recharging.");
+	//Buzzer, krótkie piknięcie
   }
 }
 
 // Przypisuje ostatnio odebraną komendę do zmiennej
 void setLastCommandValue() {
   if ((state != Inactive) && (battState != BatteryLow)) {
-    lastCommand = static_cast<RobotCommand>(receivedData.charAt(0));	// zrzutowanie pierwszego bajtu ostatnio odebranej serii na enum komendy robota
+    if (receivedData.length()) {										// jeśli jakiekolwiek dane odebrane
+      lastCommand = static_cast<RobotCommand>(receivedData.charAt(0));	// zrzutowanie pierwszego bajtu ostatnio odebranej serii na enum komendy robota
+    }
   }
   else {
     if (lastCommand != GoToInitialPos) {
@@ -585,28 +566,40 @@ void stateInitialising() {
 
 // RUCHY ROBOTA:
 void stillStand() {
-  RightFrontBodyServo::setPosition(50);
-  RightFrontHipServo::setPosition(50);
-  RightFrontKneeServo::setPosition(50);
-  RightMiddleBodyServo::setPosition(50);
-  RightMiddleHipServo::setPosition(50);
-  RightMiddleKneeServo::setPosition(50);
-  RightRearBodyServo::setPosition(50);
-  RightRearHipServo::setPosition(50);
-  RightRearKneeServo::setPosition(50);
-  LeftFrontBodyServo::setPosition(50);
-  LeftFrontHipServo::setPosition(50);
-  LeftFrontKneeServo::setPosition(50);
-  LeftMiddleBodyServo::setPosition(50);
-  LeftMiddleHipServo::setPosition(50);
-  LeftMiddleKneeServo::setPosition(50);
-  LeftRearBodyServo::setPosition(50);
-  LeftRearHipServo::setPosition(50);
-  LeftRearKneeServo::setPosition(50);
+  leftSideFrontBack(50);
+  rightSideFrontBack(50);
+  leftSideUpDown(50, 0b111);
+  rightSideUpDown(50, 0b111);
 }
 
 void standToFront() {
-  //
+  for (int8_t i = 50; i < 75; ++i)	{
+    leftSideFrontBack(i);
+    rightSideFrontBack(i);
+    leftSideUpDown(limitVal(i), 0b101);
+    rightSideUpDown(limitVal(i), 0b010);
+  }
+  for (int8_t i = 75; i <= 100; ++i) {
+    leftSideFrontBack(i);
+    rightSideFrontBack(i);
+	int8_t j = map(i, 75, 100, 75, 50);
+    leftSideUpDown(limitVal(j), 0b101);
+    rightSideUpDown(limitVal(j), 0b010);
+  }
+  for (int8_t i = 100; i > 50; --i) {
+    leftSideFrontBack(i);
+    rightSideFrontBack(i);
+    int8_t j = map(i, 100, 50, 50, 100);
+    leftSideUpDown(limitVal(j), 0b010);
+    rightSideUpDown(limitVal(j), 0b101);
+  }
+  for (int8_t i = 50; i >= 0; --i) {
+    leftSideFrontBack(i);
+    rightSideFrontBack(i);
+    int8_t j = map(i, 50, 0, 100, 50);
+    leftSideUpDown(limitVal(j), 0b010);
+    rightSideUpDown(limitVal(j), 0b101);
+  }
 }
 
 void standToBack() {
@@ -638,15 +631,61 @@ void standToTurnRight() {
 //}
 
 void standToInitialPos() {
-  //
+  for (int8_t i = 50; i <= 100; ++i)
+  {
+    leftSideFrontBack(50);
+    rightSideFrontBack(50);
+    leftSideUpDown(i, 0b111);
+    rightSideUpDown(i, 0b111);
+  }
 }
 
 void stillFront() {
-  //
+  for (int8_t i = 0; i < 50; ++i) {
+    leftSideFrontBack(i);
+    rightSideFrontBack(i);
+    int8_t j = /*map(i, 0, 50, 50, 100)*/i + 50;
+    leftSideUpDown(limitVal(j), 0b101);
+    rightSideUpDown(limitVal(j), 0b010);
+  }
+  for (int8_t i = 50; i <= 100; ++i) {
+    leftSideFrontBack(i);
+    rightSideFrontBack(i);
+    int8_t j = /*map(i, 50, 100, 100, 50)*/150 - i;
+    leftSideUpDown(limitVal(j), 0b101);
+    rightSideUpDown(limitVal(j), 0b010);
+  }
+  for (int8_t i = 100; i > 50; --i) {
+    leftSideFrontBack(i);
+    rightSideFrontBack(i);
+    int8_t j = /*map(i, 100, 50, 50, 100)*/150 - i;
+    leftSideUpDown(limitVal(j), 0b010);
+    rightSideUpDown(limitVal(j), 0b101);
+  }
+  for (int8_t i = 50; i >= 0; --i) {
+    leftSideFrontBack(i);
+    rightSideFrontBack(i);
+    int8_t j = /*map(i, 50, 0, 100, 50)*/i + 50;
+    leftSideUpDown(limitVal(j), 0b010);
+    rightSideUpDown(limitVal(j), 0b101);
+  }
 }
 
 void frontToStand() {
-  //
+  for (int8_t i = 0; i < 25; ++i) {
+    leftSideFrontBack(i);
+    rightSideFrontBack(i);
+	int8_t j = /*map(i, 0, 25, 50, 75)*/i + 50;
+    leftSideUpDown(limitVal(j), 0b101);
+    rightSideUpDown(limitVal(j), 0b010);
+  }
+  for (int8_t i = 25; i <= 50; ++i) {
+    leftSideFrontBack(i);
+    rightSideFrontBack(i);
+    int8_t j = /*map(i, 25, 50, 75, 50)*/100 - i;
+    leftSideUpDown(limitVal(j), 0b101);
+    rightSideUpDown(limitVal(j), 0b010);
+  }
 }
 
 void stillBack() {
@@ -702,107 +741,14 @@ void turningRightToStand() {
 //}
 
 void initialPosToStand() {
-  for (int8_t i = 0; i <= 50; ++i)
+  for (int8_t i = 100; i >= 50; --i)
   {
-    /*RightFrontBodyServo::setPosition(50);
-    //RightFrontHipServo::setPosition(100-i);
-    RightFrontHipServo::setPosition(100-mMap(i,70)); //itd.
-    RightFrontKneeServo::setPosition(i);
-    RightMiddleBodyServo::setPosition(50);
-    RightMiddleHipServo::setPosition(100-i);
-    RightMiddleKneeServo::setPosition(i);
-    RightRearBodyServo::setPosition(50);
-    RightRearHipServo::setPosition(100-i);
-    RightRearKneeServo::setPosition(i);
-    LeftFrontBodyServo::setPosition(50);
-    LeftFrontHipServo::setPosition(100-i);
-    LeftFrontKneeServo::setPosition(i);
-    LeftMiddleBodyServo::setPosition(50);
-    LeftMiddleHipServo::setPosition(100-i);
-    LeftMiddleKneeServo::setPosition(i);
-    LeftRearBodyServo::setPosition(50);
-    LeftRearHipServo::setPosition(100-i);
-    LeftRearKneeServo::setPosition(i);*/
     leftSideFrontBack(50);
     rightSideFrontBack(50);
-    leftSideUpDown(100-i, 0b111);
-    rightSideUpDown(100-i, 0b111);
-  }
-  /*delay(2000);
-  for (int8_t i = 50; i <= 100; ++i) {
-    delay(5);
-    leftSideUpDown(limitVal(i), 0b111);
-    rightSideUpDown(limitVal(i), 0b111);
-  }
-  delay(2000);
-  for (int8_t i = 100; i >= 50; --i) {
-    delay(5);
-    leftSideUpDown(limitVal(i), 0b111);
-    rightSideUpDown(limitVal(i), 0b111);
-  }
-  delay(2000);
-  for (int8_t i = 50; i <= 100; ++i) {
-    delay(5);
-    leftSideUpDown(limitVal(i), 0b111);
-    rightSideUpDown(limitVal(i), 0b111);
-  }
-  delay(2000);
-  for (int8_t i = 100; i >= 50; --i) {
-    delay(5);
-    leftSideUpDown(limitVal(i), 0b111);
-    rightSideUpDown(limitVal(i), 0b111);
-  }
-  delay(2000);
-  for (int8_t i = 50; i <= 100; ++i) {
-    delay(5);
     leftSideUpDown(i, 0b111);
     rightSideUpDown(i, 0b111);
   }
-  Serial.println("max gora");
-  delay(7000);
-  for (int8_t i = 100; i >= 50; --i) {
-    delay(5);
-    leftSideUpDown(i, 0b111);
-    rightSideUpDown(i, 0b111);
-  }*/
-
-  delay(2000);
-  for (int8_t i = 50; i <= 100; ++i) {
-    delay(10);
-    leftSideFrontBack(i);
-    rightSideFrontBack(i);
-  }
-  Serial.println("max przod");
-  delay(10000);
-  for (int8_t i = 100; i >= 0; --i) {
-    delay(10);
-    leftSideFrontBack(i);
-    rightSideFrontBack(i);
-  }
-  Serial.println("max tyl");
-  delay(10000);
-  for (int8_t i = 0; i <= 100; ++i) {
-    delay(10);
-    leftSideFrontBack(i);
-    rightSideFrontBack(i);
-  }
-  Serial.println("max przod");
-  delay(2000);
-  for (int8_t i = 100; i >= 0; --i) {
-    delay(10);
-    leftSideFrontBack(i);
-    rightSideFrontBack(i);
-  }
-  Serial.println("max tyl");
-  delay(2000);
-  for (int8_t i = 0; i <= 50; ++i) {
-    delay(10);
-    leftSideFrontBack(i);
-    rightSideFrontBack(i);
-  }
-  Serial.println("srodek");
 }
-// dorobić funkcje dla każdego serwa oraz funkcje na każdy poziom lub na każdą kończynę /
 
 // Zwraca wartość z przedziału od 0 do 100 przeskalowaną do wartości z przedziału od 0 do newMax
 int8_t mMap(int8_t value, int8_t newMax) {
