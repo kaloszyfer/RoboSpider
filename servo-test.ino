@@ -547,10 +547,10 @@ void stateTurningRight() {
 //  }
 //}
 
-// Kończy obsługę modułu Bluetooth oraz portu szeregowego
+// Kończy obsługę modułu Bluetooth, serw oraz ustawia flagę przetwarzania głównej pętli programu na false
 void stateInactive() {
   btSerial.end();
-  Serial.end();
+//  Serial.end();
   isActive = false;
   servoLeft.detach();
   servoRight.detach();
