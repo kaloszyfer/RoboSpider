@@ -1,11 +1,11 @@
 // ------------------------------------------------------
 //I2C
 #include <Wire.h>
-//serwa połąaczone do PCA9685
+//serwa połączone do PCA9685
 #include <Adafruit_PWMServoDriver.h>
 //serwa połączone bezpośrednio do Arduino
 #include <Servo.h>
-//bt połączone do pinów 5 i 4
+//BT połączone do pinów 5 i 4
 #include <SoftwareSerial.h>
 // ------------------------------------------------------
 
@@ -34,15 +34,19 @@
 #define SERVOMAX  600 // minimalna długość impulsu (z 4096)
 #define SERVOMID  375 //(SERVOMAX+SERVOMIN)/2 // wartość wyśrodkowana
 // 450pul. - 180st. -> Xpul. - 62st. -> X = 155pul. (62st.) // a 60st. to 150pul.
-#define SERVOMIN_0 225 // wg pomiarów - 62st. od pozycji środkowej (150+225-155 = 220)
-#define SERVOMAX_0 525 // wg pomiarów - 62st. od pozycji środkowej (600-225+155 = 530)
-#define SERVOMIN_1 205
-#define SERVOMAX_1 545
-#define SERVOMIN_2 205
-#define SERVOMAX_2 545
+#define SERVOMIN_0 /*220*//*225*//*300*//*325*/340 // wg pomiarów - 62st. od pozycji środkowej (150+225-155 = 220) // zakres 28st. -> 90 - 14 = 76st.
+#define SERVOMAX_0 /*530*//*525*//*450*//*425*/410 // wg pomiarów - 62st. od pozycji środkowej (600-225+155 = 530) // zakres 28st. -> 90 + 14 = 104st.
+#define SERVOMIN_1 /*215*//*245*/230
+#define SERVOMAX_1 /*535*//*505*/520
+#define SERVOMIN_2 /*205*/275
+#define SERVOMAX_2 /*545*/475
 // ------------------------------------------------------
-#define BATTERY_CRITICAL 6.08
-#define BATTERY_MEDIUM 6.65
+//stany graniczne napięć baterii
+#define BATTERY_CRITICAL 6.68
+#define BATTERY_MEDIUM 7.11
+// ------------------------------------------------------
+//domyślna wartość ograniczenia (dla funkcji limitVal(value, limit))
+#define DEFAULT_VALUE_LIMIT 75
 // ------------------------------------------------------
 
 enum RobotState   // stany robota
@@ -55,7 +59,7 @@ enum RobotState   // stany robota
     MovingRight,      // robot jest w ruchu w prawo
     TurningLeft,      // robot skręca w lewo
     TurningRight,     // robot skręca w prawo
-	Calibrating,      // robot w trakcie kalibracji
+    Calibrating,      // robot w trakcie kalibracji
     Inactive          // robot nieaktywny - powinien być w pozycji początkowej
 };
 
@@ -78,6 +82,8 @@ enum RobotCommand // rozkazy dla robota
     GoToInitialPos    // robot wraca do pozycji początkowej
 };
 
+bool isActive = true;             // flaga mówiąca o aktywności programu głównego robota (po zmianie stanu robota na Inactive i obsłużeniu go, flaga ta zmienia stan)
+
 auto servos = Adafruit_PWMServoDriver();
 Servo servoLeft;
 Servo servoRight;
@@ -87,7 +93,7 @@ RobotState state = Initialising;
 BatteryState battState = BatteryOK;
 RobotCommand lastCommand = Stand;
 
-uint16_t pulselen/* = SERVOMID*/;		// długość impulsu wysyłanego do sterownika PWM (12bit)
+//uint16_t pulselen/* = SERVOMID*/;		// długość impulsu wysyłanego do sterownika PWM (12bit)
 unsigned long timeNow = 0;
 unsigned long timeSaved = 0;
 
@@ -97,13 +103,8 @@ String receivedData;					// zmienna na dane odbierane przez Bluetooth
 struct RightFrontBodyServo
 {
 	// Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
-	static void setPosition(uint8_t value/*, bool invert = false*/) {
-		//if (!invert) {
-		servoRight.write(map(value, 0, 100, 120, 60));
-		/*}
-		else {
-			servoRight.write(map(value, 0, 100, 60, 120));
-		}*/
+	static void setPosition(int8_t value) {
+		servoRight.write(map(value, 0, 100, /*120, 60*//*110, 70*/104, 76));
 	}
 };
 
@@ -111,7 +112,7 @@ struct RightFrontBodyServo
 struct RightFrontHipServo
 {
 	// Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
-	static void setPosition(uint8_t value) {
+	static void setPosition(int8_t value) {
 		servos.setPWM(SERVO_RIGHT_FRONT1NUM, 0, map(value, 0, 100, SERVOMIN_1, SERVOMAX_1));
 	}
 };
@@ -120,7 +121,7 @@ struct RightFrontHipServo
 struct RightFrontKneeServo
 {
 	// Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
-	static void setPosition(uint8_t value) {
+	static void setPosition(int8_t value) {
 		servos.setPWM(SERVO_RIGHT_FRONT2NUM, 0, map(value, 0, 100, SERVOMAX_2, SERVOMIN_2));
 	}
 };
@@ -130,7 +131,7 @@ struct RightFrontKneeServo
 struct RightMiddleBodyServo
 {
 	// Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
-	static void setPosition(uint8_t value) {
+	static void setPosition(int8_t value) {
 		servos.setPWM(SERVO_RIGHT_MID0NUM, 0, map(value, 0, 100, SERVOMAX_0, SERVOMIN_0));
 	}
 };
@@ -139,7 +140,7 @@ struct RightMiddleBodyServo
 struct RightMiddleHipServo
 {
 	// Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
-	static void setPosition(uint8_t value) {
+	static void setPosition(int8_t value) {
 		servos.setPWM(SERVO_RIGHT_MID1NUM, 0, map(value, 0, 100, SERVOMAX_1, SERVOMIN_1));
 	}
 };
@@ -148,7 +149,7 @@ struct RightMiddleHipServo
 struct RightMiddleKneeServo
 {
 	// Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
-	static void setPosition(uint8_t value) {
+	static void setPosition(int8_t value) {
 		servos.setPWM(SERVO_RIGHT_MID2NUM, 0, map(value, 0, 100, SERVOMIN_2, SERVOMAX_2));
 	}
 };
@@ -158,7 +159,7 @@ struct RightMiddleKneeServo
 struct RightRearBodyServo
 {
 	// Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
-	static void setPosition(uint8_t value) {
+	static void setPosition(int8_t value) {
 		servos.setPWM(SERVO_RIGHT_REAR0NUM, 0, map(value, 0, 100, SERVOMAX_0, SERVOMIN_0));
 	}
 };
@@ -167,7 +168,7 @@ struct RightRearBodyServo
 struct RightRearHipServo
 {
 	// Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
-	static void setPosition(uint8_t value) {
+	static void setPosition(int8_t value) {
 		servos.setPWM(SERVO_RIGHT_REAR1NUM, 0, map(value, 0, 100, SERVOMAX_1, SERVOMIN_1));
 	}
 };
@@ -176,7 +177,7 @@ struct RightRearHipServo
 struct RightRearKneeServo
 {
 	// Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
-	static void setPosition(uint8_t value) {
+	static void setPosition(int8_t value) {
 		servos.setPWM(SERVO_RIGHT_REAR2NUM, 0, map(value, 0, 100, SERVOMIN_2, SERVOMAX_2));
 	}
 };
@@ -187,8 +188,8 @@ struct RightRearKneeServo
 struct LeftFrontBodyServo
 {
 	// Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
-	static void setPosition(uint8_t value) {
-		servoLeft.write(map(value, 0, 100, 60, 120));
+	static void setPosition(int8_t value) {
+		servoLeft.write(map(value, 0, 100, /*60, 120*//*70, 110*/76, 104));
 	}
 };
 
@@ -196,7 +197,7 @@ struct LeftFrontBodyServo
 struct LeftFrontHipServo
 {
 	// Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
-	static void setPosition(uint8_t value) {
+	static void setPosition(int8_t value) {
 		servos.setPWM(SERVO_LEFT_FRONT1NUM, 0, map(value, 0, 100, SERVOMAX_1, SERVOMIN_1));
 	}
 };
@@ -205,7 +206,7 @@ struct LeftFrontHipServo
 struct LeftFrontKneeServo
 {
 	// Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
-	static void setPosition(uint8_t value) {
+	static void setPosition(int8_t value) {
 		servos.setPWM(SERVO_LEFT_FRONT2NUM, 0, map(value, 0, 100, SERVOMIN_2, SERVOMAX_2));
 	}
 };
@@ -215,7 +216,7 @@ struct LeftFrontKneeServo
 struct LeftMiddleBodyServo
 {
 	// Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
-	static void setPosition(uint8_t value) {
+	static void setPosition(int8_t value) {
 		servos.setPWM(SERVO_LEFT_MID0NUM, 0, map(value, 0, 100, SERVOMIN_0, SERVOMAX_0));
 	}
 };
@@ -224,7 +225,7 @@ struct LeftMiddleBodyServo
 struct LeftMiddleHipServo
 {
 	// Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
-	static void setPosition(uint8_t value) {
+	static void setPosition(int8_t value) {
 		servos.setPWM(SERVO_LEFT_MID1NUM, 0, map(value, 0, 100, SERVOMIN_1, SERVOMAX_1));
 	}
 };
@@ -233,7 +234,7 @@ struct LeftMiddleHipServo
 struct LeftMiddleKneeServo
 {
 	// Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
-	static void setPosition(uint8_t value) {
+	static void setPosition(int8_t value) {
 		servos.setPWM(SERVO_LEFT_MID2NUM, 0, map(value, 0, 100, SERVOMAX_2, SERVOMIN_2));
 	}
 };
@@ -243,7 +244,7 @@ struct LeftMiddleKneeServo
 struct LeftRearBodyServo
 {
 	// Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
-	static void setPosition(uint8_t value) {
+	static void setPosition(int8_t value) {
 		servos.setPWM(SERVO_LEFT_REAR0NUM, 0, map(value, 0, 100, SERVOMIN_0, SERVOMAX_0));
 	}
 };
@@ -252,7 +253,7 @@ struct LeftRearBodyServo
 struct LeftRearHipServo
 {
 	// Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
-	static void setPosition(uint8_t value) {
+	static void setPosition(int8_t value) {
 		servos.setPWM(SERVO_LEFT_REAR1NUM, 0, map(value, 0, 100, SERVOMIN_1, SERVOMAX_1));
 	}
 };
@@ -261,7 +262,7 @@ struct LeftRearHipServo
 struct LeftRearKneeServo
 {
 	// Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
-	static void setPosition(uint8_t value) {
+	static void setPosition(int8_t value) {
 		servos.setPWM(SERVO_LEFT_REAR2NUM, 0, map(value, 0, 100, SERVOMAX_2, SERVOMIN_2));
 	}
 };
@@ -298,47 +299,14 @@ double readBatteryVoltage() {
 void servoInit() {
   servos.begin();                                               // inicjalizacja sterownika PWM
   servos.setPWMFreq(60);                                        // analogowe serwa działają na około 60Hz
-  //  for (uint8_t servoNum = 0; servoNum < 16; servoNum++) {       // ustawienie pozycji początkowych
-  //    if (servoNum == SERVO_RIGHT_REAR0NUM || servoNum == SERVO_RIGHT_MID0NUM
-  //       || servoNum == SERVO_LEFT_REAR0NUM || servoNum == SERVO_LEFT_MID0NUM) {
-  //      servos.setPWM(servoNum, 0, SERVOMID);
-  //    }
-  //    else {
-  //      servos.setPWM(servoNum, 0, SERVOMIN);
-  //    }
-  //  }
-  // PRZYDAŁOBY SIĘ JESZCZE ZROBIĆ COŚ Z DZIWNYM RUCHEM SERW NA POCZĄTKU
-  /*servos.setPWM(SERVO_RIGHT_REAR0NUM, 0, SERVOMID);
-  servos.setPWM(SERVO_RIGHT_MID0NUM, 0, SERVOMID);
 
-  servos.setPWM(SERVO_LEFT_REAR0NUM, 0, SERVOMID);
-  servos.setPWM(SERVO_LEFT_MID0NUM, 0, SERVOMID);
-
-  servos.setPWM(SERVO_RIGHT_REAR1NUM, 0, SERVOMAX_1);
-  servos.setPWM(SERVO_RIGHT_MID1NUM, 0, SERVOMAX_1);
-
-  servos.setPWM(SERVO_LEFT_FRONT1NUM, 0, SERVOMAX_1);
-
-  servos.setPWM(SERVO_RIGHT_REAR2NUM, 0, SERVOMIN_2);
-  servos.setPWM(SERVO_RIGHT_MID2NUM, 0, SERVOMIN_2);
-  
-  servos.setPWM(SERVO_LEFT_FRONT2NUM, 0, SERVOMIN_2);
-
-  servos.setPWM(SERVO_RIGHT_FRONT1NUM, 0, SERVOMIN_1);
-
-  servos.setPWM(SERVO_LEFT_REAR1NUM, 0, SERVOMIN_1);
-  servos.setPWM(SERVO_LEFT_MID1NUM, 0, SERVOMIN_1);
-
-  servos.setPWM(SERVO_RIGHT_FRONT2NUM, 0, SERVOMAX_2);
-
-  servos.setPWM(SERVO_LEFT_REAR2NUM, 0, SERVOMAX_2);
-  servos.setPWM(SERVO_LEFT_MID2NUM, 0, SERVOMAX_2);*/
+// PRZYDAŁOBY SIĘ JESZCZE ZROBIĆ COŚ Z DZIWNYM RUCHEM SERW NA POCZĄTKU
 
   servoLeft.attach(SERVO_LEFT_FRONT0NUM);                       // inicjalizacja lewego serwa, podłączonego bezpośrednio do arduino
-  //servoLeft.write(90);                                          // ustawienie jego pozycji początkowej
-
   servoRight.attach(SERVO_RIGHT_FRONT0NUM);                     // inicjalizacja prawego serwa, podłączonego bezpośrednio do arduino
-  //servoRight.write(90);                                         // ustawienie jego pozycji początkowej
+
+// można tutaj dorobić odczyt z eeprom, jeśli wynik inny niż 0, to initialPos, w przeciwnym razie standing
+// w innym miejscu zapis do eeprom
 
   RightFrontBodyServo::setPosition(50);
   RightFrontHipServo::setPosition(100);
@@ -359,194 +327,34 @@ void servoInit() {
   LeftRearHipServo::setPosition(100);
   LeftRearKneeServo::setPosition(0);
 
-  // pozycja początkowa: serwa najbliżej ciała robota wyśrodkowane, a reszta na pozycji = minimum / maksimum zależnie od strony - kończyny "złożone"
+  // pozycja początkowa: serwa najbliżej ciała robota wyśrodkowane, serwa "biodra" maksymalnie uniesione, serwa "kolana" maksymalnie opuszczone - kończyny "złożone"
 }
 
 // Wykonuje w nieskończonej pętli
 void loop() {
+  if (!isActive) {
+    return;
+  }
+  readSerialData();
   readBluetoothData();
   checkBatteryVoltageEveryTenSeconds();
   setLastCommandValue();
   robotMovement_CheckState();
+}
 
-/* //TEST
-  for (pulselen = SERVOMID; pulselen < SERVOMAX; pulselen+=5) {
-    servoLeft.write(map(pulselen, SERVOMIN, SERVOMAX, 60, 120));
-    servoRight.write(map(pulselen, SERVOMIN, SERVOMAX, 120, 60));
-    servos.setPWM(SERVO_RIGHT_REAR1NUM, 0, pulselen);
-    servos.setPWM(SERVO_RIGHT_MID0NUM, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMIN_LEVEL0, SERVOMAX_LEVEL0));
-    servos.setPWM(SERVO_RIGHT_REAR0NUM, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMIN_LEVEL0, SERVOMAX_LEVEL0));
-    servos.setPWM(SERVO_LEFT_MID0NUM, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMIN_LEVEL0, SERVOMAX_LEVEL0));
-    servos.setPWM(SERVO_LEFT_REAR0NUM, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMIN_LEVEL0, SERVOMAX_LEVEL0));
+// Odczytuje dane z portu szeregowego
+void readSerialData() {
+  if (Serial.available()) {
+    String data;
+    data += Serial.readString().charAt(0);
+    receivedData = data.toInt();            // zamieniam na integer i zapisuję do zmiennej
   }
-  for (pulselen = SERVOMAX; pulselen > SERVOMID; pulselen-=5) {
-    servoLeft.write(map(pulselen, SERVOMIN, SERVOMAX, 60, 120));
-    servoRight.write(map(pulselen, SERVOMIN, SERVOMAX, 120, 60));
-    servos.setPWM(SERVO_RIGHT_REAR1NUM, 0, pulselen);
-    servos.setPWM(SERVO_RIGHT_MID0NUM, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMIN_LEVEL0, SERVOMAX_LEVEL0));
-    servos.setPWM(SERVO_RIGHT_REAR0NUM, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMIN_LEVEL0, SERVOMAX_LEVEL0));
-    servos.setPWM(SERVO_LEFT_MID0NUM, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMIN_LEVEL0, SERVOMAX_LEVEL0));
-    servos.setPWM(SERVO_LEFT_REAR0NUM, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMIN_LEVEL0, SERVOMAX_LEVEL0));
-  }
-  for (pulselen = SERVOMID; pulselen > SERVOMIN; pulselen-=5) {
-    servoLeft.write(map(pulselen, SERVOMIN, SERVOMAX, 60, 120));
-    servoRight.write(map(pulselen, SERVOMIN, SERVOMAX, 120, 60));
-    servos.setPWM(SERVO_RIGHT_REAR1NUM, 0, pulselen);
-    servos.setPWM(SERVO_RIGHT_MID0NUM, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMIN_LEVEL0, SERVOMAX_LEVEL0));
-    servos.setPWM(SERVO_RIGHT_REAR0NUM, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMIN_LEVEL0, SERVOMAX_LEVEL0));
-    servos.setPWM(SERVO_LEFT_MID0NUM, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMIN_LEVEL0, SERVOMAX_LEVEL0));
-    servos.setPWM(SERVO_LEFT_REAR0NUM, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMIN_LEVEL0, SERVOMAX_LEVEL0));
-  }
-  for (pulselen = SERVOMIN; pulselen < SERVOMID; pulselen+=5) {
-    servoLeft.write(map(pulselen, SERVOMIN, SERVOMAX, 60, 120));
-    servoRight.write(map(pulselen, SERVOMIN, SERVOMAX, 120, 60));
-    servos.setPWM(SERVO_RIGHT_REAR1NUM, 0, pulselen);
-    servos.setPWM(SERVO_RIGHT_MID0NUM, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMIN_LEVEL0, SERVOMAX_LEVEL0));
-    servos.setPWM(SERVO_RIGHT_REAR0NUM, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMIN_LEVEL0, SERVOMAX_LEVEL0));
-    servos.setPWM(SERVO_LEFT_MID0NUM, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMIN_LEVEL0, SERVOMAX_LEVEL0));
-    servos.setPWM(SERVO_LEFT_REAR0NUM, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMIN_LEVEL0, SERVOMAX_LEVEL0));
-  }
-*/
-
-/*
-  for (pulselen = SERVOMID; pulselen < SERVOMAX; pulselen++) { // faza 1: od środka do końca
-  //for (uint16_t pulselen = SERVOMID; pulselen < SERVOMAX; pulselen++) { // faza 1: od środka do końca
-//  if (phase == 0 && pulselen >= SERVOMID && pulselen < SERVOMAX) {
-    //servos.setPWM(SERVO_RIGHT_REAR1NUM, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMIN, SERVOMAX));
-    //servos.setPWM(SERVO_RIGHT_REAR1NUM, 0, pulselen++);
-    phaseFirst();
-  }
-//  else if (phase == 0) {
-//    phase = 1;
-//    delay(350);
-//  }
-
-  delay(350);
-  for (pulselen = SERVOMAX; pulselen > SERVOMID; pulselen--) { // faza 2: od końca do środka
-  //for (uint16_t pulselen = SERVOMAX; pulselen > SERVOMID; pulselen--) { // faza 2: od końca do środka
-//  if (phase == 1 && pulselen <= SERVOMAX && pulselen > SERVOMID) {
-    //servos.setPWM(SERVO_RIGHT_REAR1NUM, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMIN, SERVOMAX));
-    //servos.setPWM(SERVO_RIGHT_REAR1NUM, 0, pulselen--);
-    phaseSecond();
-  }
-//  else if (phase == 1) {
-//    phase = 2;
-//  }
-
-  for (pulselen = SERVOMID; pulselen > SERVOMIN; pulselen--) { // faza 3: od środka do początku
-  //for (uint16_t pulselen = SERVOMID; pulselen > SERVOMIN; pulselen--) { // faza 3: od środka do początku
-//  if (phase == 2 && pulselen <= SERVOMID && pulselen > SERVOMIN) {
-    //servos.setPWM(SERVO_RIGHT_REAR1NUM, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMIN, SERVOMAX));
-    //servos.setPWM(SERVO_RIGHT_REAR1NUM, 0, pulselen--);
-    phaseThird();
-  }
-//  else if (phase == 2) {
-//    phase = 3;
-//    delay(350);
-//  }
-
-  delay(350);
-  for (pulselen = SERVOMIN; pulselen < SERVOMID; pulselen++) { // faza 4: od początku do środka
-  //for (uint16_t pulselen = SERVOMIN; pulselen < SERVOMID; pulselen++) { // faza 4: od początku do środka
-//  if (phase == 3 && pulselen >= SERVOMIN && pulselen < SERVOMID) {
-    //servos.setPWM(SERVO_RIGHT_REAR1NUM, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMIN, SERVOMAX));
-    //servos.setPWM(SERVO_RIGHT_REAR1NUM, 0, pulselen++);
-    phaseFourth();
-  }
-//  else if (phase == 3) {
-//    phase = 0;
-//  }
-*/
-  
-/*
-  delay(500);
-  Serial.println("pca w jedna strone");
-  for (uint16_t pulselen = SERVOMIN; pulselen < SERVOMAX; pulselen++) {
-    //servos.setPWM(SERVO_RIGHT_REAR1NUM, 0, pulselen);
-    servos.setPWM(SERVO_RIGHT_REAR1NUM, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMIN, SERVOMAX));
-  }
-  delay(500);
-  Serial.println("pca w druga strone");
-  //for (uint16_t pulselen = SERVOMAX; pulselen > SERVOMIN; pulselen--) {
-  for (uint16_t pulselen = SERVOMIN; pulselen < SERVOMAX; pulselen++) {
-    //servos.setPWM(SERVO_RIGHT_REAR1NUM, 0, pulselen);
-    servos.setPWM(SERVO_RIGHT_REAR1NUM, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMAX, SERVOMIN));
-  }
-
-  delay(500);
-
-  Serial.println("lewa w jedna strone");
-  for (uint16_t pulselen = SERVOMIN; pulselen < SERVOMAX; pulselen++) {
-    servoLeft.write(map(pulselen, SERVOMIN, SERVOMAX, 60, 120));
-  }
-  delay(500);
-  Serial.println("lewa w druga strone");
-  //for (uint16_t pulselen = SERVOMAX; pulselen > SERVOMIN; pulselen--) {
-    //servoLeft.write(map(pulselen, SERVOMIN, SERVOMAX, 0, 180));
-  //}
-  for (uint16_t pulselen = SERVOMIN; pulselen < SERVOMAX; pulselen++) {
-    servoLeft.write(map(pulselen, SERVOMIN, SERVOMAX, 120, 60));
-  }
-*/
-
-
-  /*
-  Serial.println("lewa w jedna strone");
-  for (uint8_t pos = 1; pos <= 179; pos++) {
-    servoLeft.write(pos);
-    delay(1);
-  }
-  delay(500);
-  Serial.println("lewa w druga strone");
-  for (uint8_t pos = 179; pos >= 1; pos--) {
-    servoLeft.write(pos);
-    delay(1);
-  }
-
-  delay(500);
-  Serial.println("prawa w jedna strone");
-  for (uint8_t pos = 1; pos <= 179; pos++) {
-    servoRight.write(pos);
-    delay(1);
-  }
-  delay(500);
-  Serial.println("prawa w druga strone");
-  for (uint8_t pos = 179; pos >= 1; pos--) {
-    servoRight.write(pos);
-    delay(1);
-  }
-  */
-
-  /*
-  delay(500);
-  Serial.println("test");
-  Serial.println("w jedna strone");
-  Serial.println(servonum);
-  for (uint16_t pulselen = SERVOMIN; pulselen < SERVOMAX; pulselen++) {
-    servos.setPWM(servonum, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMIN, SERVOMAX));
-    delay(1);
-  }
-  delay(500);
-  Serial.println("i w druga strone");
-  for (uint16_t pulselen = SERVOMIN; pulselen < SERVOMAX; pulselen++) {
-    servos.setPWM(servonum, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMAX, SERVOMIN));
-    delay(1);
-  }
-
-  delay(500);
-
-  servonum++;
-  if (servonum > 15) servonum = 0;
-  */
 }
 
 // Odczytuje dane z modułu Bluetooth
 void readBluetoothData() {
   if (btSerial.available()) {
-    //Serial.print("BT: Odebrano dane. Pierwszy bajt = \"");
     receivedData = btSerial.readString();		// zapis serii odebranych bajtów do zmiennej
-    //Serial.print(receivedData.charAt(0), 10);
-    //Serial.println("\".");
   }
 }
 
@@ -562,10 +370,10 @@ void checkBatteryVoltageEveryTenSeconds() {
 // Sprawdza stan baterii
 void checkBatteryState() {
   double batteryVoltage = readBatteryVoltage();
-  //    Serial.println(batteryVoltage);
+//  Serial.println(batteryVoltage);
   if (batteryVoltage < BATTERY_CRITICAL) {
     battState = BatteryLow;
-	Serial.println("Warning. Low battery voltage level.");
+    Serial.println("Warning. Low battery voltage level.");
   }
   else if (batteryVoltage < BATTERY_MEDIUM) {
     Serial.println("Medium battery voltage level. It is advised to turn off the robot and start recharging.");
@@ -623,64 +431,64 @@ void robotMovement_CheckState() {
 // Funkcja bazowa, sprawdzająca ostatnio odebraną komendę i zależnie od niej podejmująca odpowiednie działanie
 void stateStanding() {
   switch(lastCommand) {
-    case Stand:
-	stillStand();
+  case Stand:
+    stillStand();
     break;
-    case MoveFront:
+  case MoveFront:
     standToFront();
     state = MovingFront;
     break;
-    case MoveBack:
+  case MoveBack:
     standToBack();
     state = MovingBack;
     break;
-    case MoveLeft:
+  case MoveLeft:
     standToLeft();
     state = MovingLeft;
     break;
-    case MoveRight:
+  case MoveRight:
     standToRight();
     state = MovingRight;
     break;
-    case TurnLeft:
+  case TurnLeft:
     standToTurnLeft();
     state = TurningLeft;
     break;
-    case TurnRight:
+  case TurnRight:
     standToTurnRight();
     state = TurningRight;
     break;
-	case Calibrate:
+  case Calibrate:
     standToCalibrate();
     state = Calibrating;
     break;
-    case GoToInitialPos:
+  case GoToInitialPos:
     standToInitialPos();
     state = Inactive;
     break;
-    }
+  }
 }
 
 // Sprawdza ostatnio odebraną komendę i zależnie od niej podejmuje odpowiednie działanie
 void stateMovingFront() {
   switch(lastCommand) {
-    case MoveFront:
+  case MoveFront:
     stillFront();
     break;
-    default:
+  default:
     frontToStand();
     state = Standing;
-	break;
+    break;
   }
 }
 
 // Sprawdza ostatnio odebraną komendę i zależnie od niej podejmuje odpowiednie działanie
 void stateMovingBack() {
   switch(lastCommand) {
-    case MoveBack:
+  case MoveBack:
     stillBack();
     break;
-    default:
+  default:
     backToStand();
     state = Standing;
     break;
@@ -690,10 +498,10 @@ void stateMovingBack() {
 // Sprawdza ostatnio odebraną komendę i zależnie od niej podejmuje odpowiednie działanie
 void stateMovingLeft() {
   switch(lastCommand) {
-    case MoveLeft:
+  case MoveLeft:
     stillLeft();
     break;
-    default:
+  default:
     leftToStand();
     state = Standing;
     break;
@@ -703,10 +511,10 @@ void stateMovingLeft() {
 // Sprawdza ostatnio odebraną komendę i zależnie od niej podejmuje odpowiednie działanie
 void stateMovingRight() {
   switch(lastCommand) {
-    case MoveRight:
+  case MoveRight:
     stillRight();
     break;
-    default:
+  default:
     rightToStand();
     state = Standing;
     break;
@@ -716,10 +524,10 @@ void stateMovingRight() {
 // Sprawdza ostatnio odebraną komendę i zależnie od niej podejmuje odpowiednie działanie
 void stateTurningLeft() {
   switch(lastCommand) {
-    case TurnLeft:
+  case TurnLeft:
     stillTurningLeft();
     break;
-    default:
+  default:
     turningLeftToStand();
     state = Standing;
     break;
@@ -729,10 +537,10 @@ void stateTurningLeft() {
 // Sprawdza ostatnio odebraną komendę i zależnie od niej podejmuje odpowiednie działanie
 void stateTurningRight() {
   switch(lastCommand) {
-    case TurnRight:
+  case TurnRight:
     stillTurningRight();
     break;
-    default:
+  default:
     turningRightToStand();
     state = Standing;
     break;
@@ -742,10 +550,10 @@ void stateTurningRight() {
 // Sprawdza ostatnio odebraną komendę i zależnie od niej podejmuje odpowiednie działanie
 void stateCalibrating() {
   switch (lastCommand) {
-    case Calibrating:
+  case Calibrating:
     stillCalibrating();
     break;
-    default:
+  default:
     calibratingToStand();
     state = Standing;
     break;
@@ -756,6 +564,7 @@ void stateCalibrating() {
 void stateInactive() {
   btSerial.end();
   Serial.end();
+  //załączenie flagi zatrzymania głównej pętli, odłączenie serw !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 }
 
 // Każe robotowi stanąć na kończynach, ustawia jego stan oraz wyświetla komunikat o zakończeniu inicjalizacji
@@ -767,7 +576,24 @@ void stateInitialising() {
 
 // RUCHY ROBOTA:
 void stillStand() {
-  //
+  RightFrontBodyServo::setPosition(50);
+  RightFrontHipServo::setPosition(50);
+  RightFrontKneeServo::setPosition(50);
+  RightMiddleBodyServo::setPosition(50);
+  RightMiddleHipServo::setPosition(50);
+  RightMiddleKneeServo::setPosition(50);
+  RightRearBodyServo::setPosition(50);
+  RightRearHipServo::setPosition(50);
+  RightRearKneeServo::setPosition(50);
+  LeftFrontBodyServo::setPosition(50);
+  LeftFrontHipServo::setPosition(50);
+  LeftFrontKneeServo::setPosition(50);
+  LeftMiddleBodyServo::setPosition(50);
+  LeftMiddleHipServo::setPosition(50);
+  LeftMiddleKneeServo::setPosition(50);
+  LeftRearBodyServo::setPosition(50);
+  LeftRearHipServo::setPosition(50);
+  LeftRearKneeServo::setPosition(50);
 }
 
 void standToFront() {
@@ -797,7 +623,7 @@ void standToTurnRight() {
 void standToCalibrate() {
   servoRight.write(map(SERVOMID, SERVOMIN, SERVOMAX, 120, 60));
   servoLeft.write(map(SERVOMID, SERVOMIN, SERVOMAX, 60, 120));
-  for (uint8_t i = 0; i < 16; ++i) {
+  for (int8_t i = 0; i < 16; ++i) {
     servos.setPWM(i, 0, SERVOMID);
   }
 }
@@ -857,7 +683,7 @@ void turningRightToStand() {
 void stillCalibrating() {
   servoRight.write(map(SERVOMID, SERVOMIN, SERVOMAX, 120, 60));
   servoLeft.write(map(SERVOMID, SERVOMIN, SERVOMAX, 60, 120));
-  for (uint8_t i = 0; i < 16; ++i) {
+  for (int8_t i = 0; i < 16; ++i) {
     servos.setPWM(i, 0, SERVOMID);
   }
 }
@@ -867,49 +693,163 @@ void calibratingToStand() {
 }
 
 void initialPosToStand() {
-	/*for (pulselen = SERVOMIN; pulselen < SERVOMID; pulselen += 5) {
-		servoRight.write(map(SERVOMID, SERVOMIN, SERVOMAX, 120, 60));
-		servos.setPWM(SERVO_RIGHT_MID0NUM, 0, SERVOMID);
-		servos.setPWM(SERVO_RIGHT_REAR0NUM, 0, SERVOMID);
-		servoLeft.write(map(SERVOMID, SERVOMIN, SERVOMAX, 60, 120));
-		servos.setPWM(SERVO_LEFT_MID0NUM, 0, SERVOMID);
-		servos.setPWM(SERVO_LEFT_REAR0NUM, 0, SERVOMID);
-		
-		servos.setPWM(SERVO_RIGHT_FRONT1NUM, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMIN_1, SERVOMAX_1));
-		servos.setPWM(SERVO_RIGHT_MID1NUM, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMAX_1, SERVOMIN_1));
-		servos.setPWM(SERVO_RIGHT_REAR1NUM, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMAX_1, SERVOMIN_1));
-		servos.setPWM(SERVO_LEFT_FRONT1NUM, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMAX_1, SERVOMIN_1));
-		servos.setPWM(SERVO_LEFT_MID1NUM, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMIN_1, SERVOMAX_1));
-		servos.setPWM(SERVO_LEFT_REAR1NUM, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMIN_1, SERVOMAX_1));
-		
-		servos.setPWM(SERVO_RIGHT_FRONT2NUM, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMAX_2, SERVOMIN_2));
-		servos.setPWM(SERVO_RIGHT_MID2NUM, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMIN_2, SERVOMAX_2));
-		servos.setPWM(SERVO_RIGHT_REAR2NUM, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMIN_2, SERVOMAX_2));
-		servos.setPWM(SERVO_LEFT_FRONT2NUM, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMIN_2, SERVOMAX_2));
-		servos.setPWM(SERVO_LEFT_MID2NUM, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMAX_2, SERVOMIN_2));
-		servos.setPWM(SERVO_LEFT_REAR2NUM, 0, map(pulselen, SERVOMIN, SERVOMAX, SERVOMAX_2, SERVOMIN_2));
-	}*/
-	for (uint8_t i = 0; i <= 50; ++i)
-	{
-		RightFrontBodyServo::setPosition(50);
-		RightFrontHipServo::setPosition(i);
-		RightFrontKneeServo::setPosition(i);
-		RightMiddleBodyServo::setPosition(50);
-		RightMiddleHipServo::setPosition(i);
-		RightMiddleKneeServo::setPosition(i);
-		RightRearBodyServo::setPosition(50);
-		RightRearHipServo::setPosition(i);
-		RightRearKneeServo::setPosition(i);
-		LeftFrontBodyServo::setPosition(50);
-		LeftFrontHipServo::setPosition(i);
-		LeftFrontKneeServo::setPosition(i);
-		LeftMiddleBodyServo::setPosition(50);
-		LeftMiddleHipServo::setPosition(i);
-		LeftMiddleKneeServo::setPosition(i);
-		LeftRearBodyServo::setPosition(50);
-		LeftRearHipServo::setPosition(i);
-		LeftRearKneeServo::setPosition(i);
-	}
-}
-// dorobić funkcje dla każdego serwa oraz funkcje na każdy poziom lub na każdą kończynę
+  for (int8_t i = 0; i <= 50; ++i)
+  {
+    /*RightFrontBodyServo::setPosition(50);
+    //RightFrontHipServo::setPosition(100-i);
+    RightFrontHipServo::setPosition(100-mMap(i,70)); //itd.
+    RightFrontKneeServo::setPosition(i);
+    RightMiddleBodyServo::setPosition(50);
+    RightMiddleHipServo::setPosition(100-i);
+    RightMiddleKneeServo::setPosition(i);
+    RightRearBodyServo::setPosition(50);
+    RightRearHipServo::setPosition(100-i);
+    RightRearKneeServo::setPosition(i);
+    LeftFrontBodyServo::setPosition(50);
+    LeftFrontHipServo::setPosition(100-i);
+    LeftFrontKneeServo::setPosition(i);
+    LeftMiddleBodyServo::setPosition(50);
+    LeftMiddleHipServo::setPosition(100-i);
+    LeftMiddleKneeServo::setPosition(i);
+    LeftRearBodyServo::setPosition(50);
+    LeftRearHipServo::setPosition(100-i);
+    LeftRearKneeServo::setPosition(i);*/
+    leftSideFrontBack(50);
+    rightSideFrontBack(50);
+    leftSideUpDown(100-i, 0b111);
+    rightSideUpDown(100-i, 0b111);
+  }
+  /*delay(2000);
+  for (int8_t i = 50; i <= 100; ++i) {
+    delay(5);
+    leftSideUpDown(limitVal(i), 0b111);
+    rightSideUpDown(limitVal(i), 0b111);
+  }
+  delay(2000);
+  for (int8_t i = 100; i >= 50; --i) {
+    delay(5);
+    leftSideUpDown(limitVal(i), 0b111);
+    rightSideUpDown(limitVal(i), 0b111);
+  }
+  delay(2000);
+  for (int8_t i = 50; i <= 100; ++i) {
+    delay(5);
+    leftSideUpDown(limitVal(i), 0b111);
+    rightSideUpDown(limitVal(i), 0b111);
+  }
+  delay(2000);
+  for (int8_t i = 100; i >= 50; --i) {
+    delay(5);
+    leftSideUpDown(limitVal(i), 0b111);
+    rightSideUpDown(limitVal(i), 0b111);
+  }
+  delay(2000);
+  for (int8_t i = 50; i <= 100; ++i) {
+    delay(5);
+    leftSideUpDown(i, 0b111);
+    rightSideUpDown(i, 0b111);
+  }
+  Serial.println("max gora");
+  delay(7000);
+  for (int8_t i = 100; i >= 50; --i) {
+    delay(5);
+    leftSideUpDown(i, 0b111);
+    rightSideUpDown(i, 0b111);
+  }*/
 
+  delay(2000);
+  for (int8_t i = 50; i <= 100; ++i) {
+    delay(10);
+    leftSideFrontBack(i);
+    rightSideFrontBack(i);
+  }
+  Serial.println("max przod");
+  delay(10000);
+  for (int8_t i = 100; i >= 0; --i) {
+    delay(10);
+    leftSideFrontBack(i);
+    rightSideFrontBack(i);
+  }
+  Serial.println("max tyl");
+  delay(10000);
+  for (int8_t i = 0; i <= 100; ++i) {
+    delay(10);
+    leftSideFrontBack(i);
+    rightSideFrontBack(i);
+  }
+  Serial.println("max przod");
+  delay(2000);
+  for (int8_t i = 100; i >= 0; --i) {
+    delay(10);
+    leftSideFrontBack(i);
+    rightSideFrontBack(i);
+  }
+  Serial.println("max tyl");
+  delay(2000);
+  for (int8_t i = 0; i <= 50; ++i) {
+    delay(10);
+    leftSideFrontBack(i);
+    rightSideFrontBack(i);
+  }
+  Serial.println("srodek");
+}
+// dorobić funkcje dla każdego serwa oraz funkcje na każdy poziom lub na każdą kończynę /
+
+// Zwraca wartość z przedziału od 0 do 100 przeskalowaną do wartości z przedziału od 0 do newMax
+int8_t mMap(int8_t value, int8_t newMax) {
+  return map(value, 0, 100, 0, newMax);
+}
+
+// Zwraca wartość parametru value nie większą niż domyślny parametr limitu (DEFAULT_VALUE_LIMIT)
+int8_t limitVal(int8_t value) {
+  return limitVal(value, DEFAULT_VALUE_LIMIT);
+}
+// Zwraca wartość parametru value nie większą niż podany parametr limit
+int8_t limitVal(int8_t value, int8_t limit) {
+  if (value >= limit) {
+    return limit;
+  }
+  return value;
+}
+
+// Odnóża po prawej stronie dla value=100: skrajne na maksa do tyłu, środkowe na maksa do przodu
+void rightSideFrontBack(int8_t value) {
+  RightFrontBodyServo::setPosition(100 - value);
+  RightMiddleBodyServo::setPosition(value);
+  RightRearBodyServo::setPosition(100 - value);
+}
+
+// Odnóża po prawej stronie dla value=100: wybrane poprzez parametr select (bit0 - przód, bit1 - środek, bit2 - tył) na maksa do góry
+void rightSideUpDown(int8_t value, int8_t select) {
+  rightSideUpDown(value, select, 50);
+}
+void rightSideUpDown(int8_t value, int8_t select, int8_t defMidVal) {
+  int8_t subtraction = 100 - value;
+  RightFrontHipServo::setPosition((select & 0b100) ? value : defMidVal);
+  RightFrontKneeServo::setPosition((select & 0b100) ? subtraction : defMidVal);
+  RightMiddleHipServo::setPosition((select & 0b010) ? value : defMidVal);
+  RightMiddleKneeServo::setPosition((select & 0b010) ? subtraction : defMidVal);
+  RightRearHipServo::setPosition((select & 0b001) ? value : defMidVal);
+  RightRearKneeServo::setPosition((select & 0b001) ? subtraction : defMidVal);
+}
+
+// Odnóża po lewej stronie dla value=100: skrajne na maksa do przodu, środkowe na maksa do tyłu
+void leftSideFrontBack(int8_t value) {
+  LeftFrontBodyServo::setPosition(value);
+  LeftMiddleBodyServo::setPosition(100 - value);
+  LeftRearBodyServo::setPosition(value);
+}
+
+// Odnóża po lewej stronie dla value=100: wybrane poprzez parametr select (bit0 - przód, bit1 - środek, bit2 - tył) na maksa do góry
+void leftSideUpDown(int8_t value, int8_t select) {
+  leftSideUpDown(value, select, 50);
+}
+void leftSideUpDown(int8_t value, int8_t select, int8_t defMidVal) {
+  int8_t subtraction = 100 - value;
+  LeftFrontHipServo::setPosition((select & 0b100) ? value : defMidVal);
+  LeftFrontKneeServo::setPosition((select & 0b100) ? subtraction : defMidVal);
+  LeftMiddleHipServo::setPosition((select & 0b010) ? value : defMidVal);
+  LeftMiddleKneeServo::setPosition((select & 0b010) ? subtraction : defMidVal);
+  LeftRearHipServo::setPosition((select & 0b001) ? value : defMidVal);
+  LeftRearKneeServo::setPosition((select & 0b001) ? subtraction : defMidVal);
+}
