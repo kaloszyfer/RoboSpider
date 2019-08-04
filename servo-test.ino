@@ -59,7 +59,7 @@ enum RobotState   // stany robota
     MovingRight,      // robot jest w ruchu w prawo
     TurningLeft,      // robot skręca w lewo
     TurningRight,     // robot skręca w prawo
-    Calibrating,      // robot w trakcie kalibracji
+//    Calibrating,      // robot w trakcie kalibracji
     Inactive          // robot nieaktywny - powinien być w pozycji początkowej
 };
 
@@ -78,7 +78,7 @@ enum RobotCommand // rozkazy dla robota
     MoveRight,        // robot idzie w prawo
     TurnLeft,         // robot skręca w lewo
     TurnRight,        // robot skręca w prawo
-    Calibrate,        // robot środkuje pozycje wszystkich serw (Należy trzymać robota w powietrzu i dać swobodę kończynom)
+//    Calibrate,        // robot środkuje pozycje wszystkich serw (Należy trzymać robota w powietrzu i dać swobodę kończynom)
     GoToInitialPos    // robot wraca do pozycji początkowej
 };
 
@@ -308,7 +308,7 @@ void servoInit() {
 // można tutaj dorobić odczyt z eeprom, jeśli wynik inny niż 0, to initialPos, w przeciwnym razie standing
 // w innym miejscu zapis do eeprom
 
-  RightFrontBodyServo::setPosition(50);
+  /*RightFrontBodyServo::setPosition(50);
   RightFrontHipServo::setPosition(100);
   RightFrontKneeServo::setPosition(0);
   RightMiddleBodyServo::setPosition(50);
@@ -325,7 +325,12 @@ void servoInit() {
   LeftMiddleKneeServo::setPosition(0);
   LeftRearBodyServo::setPosition(50);
   LeftRearHipServo::setPosition(100);
-  LeftRearKneeServo::setPosition(0);
+  LeftRearKneeServo::setPosition(0);*/
+
+  leftSideFrontBack(50);
+  rightSideFrontBack(50);
+  leftSideUpDown(100, 0b111);
+  rightSideUpDown(100, 0b111);
 
   // pozycja początkowa: serwa najbliżej ciała robota wyśrodkowane, serwa "biodra" maksymalnie uniesione, serwa "kolana" maksymalnie opuszczone - kończyny "złożone"
 }
@@ -417,9 +422,9 @@ void robotMovement_CheckState() {
   case TurningRight:
     stateTurningRight();
     break;
-  case Calibrating:
-    stateCalibrating();
-    break;
+//  case Calibrating:
+//    stateCalibrating();
+//    break;
   case Inactive:
     stateInactive();
     break;
@@ -459,10 +464,10 @@ void stateStanding() {
     standToTurnRight();
     state = TurningRight;
     break;
-  case Calibrate:
-    standToCalibrate();
-    state = Calibrating;
-    break;
+//  case Calibrate:
+//    standToCalibrate();
+//    state = Calibrating;
+//    break;
   case GoToInitialPos:
     standToInitialPos();
     state = Inactive;
@@ -549,17 +554,17 @@ void stateTurningRight() {
 }
 
 // Sprawdza ostatnio odebraną komendę i zależnie od niej podejmuje odpowiednie działanie
-void stateCalibrating() {
-  switch (lastCommand) {
-  case Calibrating:
-    stillCalibrating();
-    break;
-  default:
-    calibratingToStand();
-    state = Standing;
-    break;
-  }
-}
+//void stateCalibrating() {
+//  switch (lastCommand) {
+//  case Calibrating:
+//    stillCalibrating();
+//    break;
+//  default:
+//    calibratingToStand();
+//    state = Standing;
+//    break;
+//  }
+//}
 
 // Kończy obsługę modułu Bluetooth oraz portu szeregowego
 void stateInactive() {
@@ -624,13 +629,13 @@ void standToTurnRight() {
   //
 }
 
-void standToCalibrate() {
-  servoRight.write(map(SERVOMID, SERVOMIN, SERVOMAX, 120, 60));
-  servoLeft.write(map(SERVOMID, SERVOMIN, SERVOMAX, 60, 120));
-  for (int8_t i = 0; i < 16; ++i) {
-    servos.setPWM(i, 0, SERVOMID);
-  }
-}
+//void standToCalibrate() {
+//  servoRight.write(map(SERVOMID, SERVOMIN, SERVOMAX, 120, 60));
+//  servoLeft.write(map(SERVOMID, SERVOMIN, SERVOMAX, 60, 120));
+//  for (int8_t i = 0; i < 16; ++i) {
+//    servos.setPWM(i, 0, SERVOMID);
+//  }
+//}
 
 void standToInitialPos() {
   //
@@ -684,17 +689,17 @@ void turningRightToStand() {
   //
 }
 
-void stillCalibrating() {
-  servoRight.write(map(SERVOMID, SERVOMIN, SERVOMAX, 120, 60));
-  servoLeft.write(map(SERVOMID, SERVOMIN, SERVOMAX, 60, 120));
-  for (int8_t i = 0; i < 16; ++i) {
-    servos.setPWM(i, 0, SERVOMID);
-  }
-}
+//void stillCalibrating() {
+//  servoRight.write(map(SERVOMID, SERVOMIN, SERVOMAX, 120, 60));
+//  servoLeft.write(map(SERVOMID, SERVOMIN, SERVOMAX, 60, 120));
+//  for (int8_t i = 0; i < 16; ++i) {
+//    servos.setPWM(i, 0, SERVOMID);
+//  }
+//}
 
-void calibratingToStand() {
-  //
-}
+//void calibratingToStand() {
+//  //
+//}
 
 void initialPosToStand() {
   for (int8_t i = 0; i <= 50; ++i)
