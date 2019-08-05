@@ -48,6 +48,9 @@
 //domyślna wartość ograniczenia (dla funkcji limitVal(value, limit))
 #define DEFAULT_VALUE_LIMIT 75
 // ------------------------------------------------------
+//buzzer
+#define BUZZER_PIN 12
+// ------------------------------------------------------
 
 enum RobotState   // stany robota
 {
@@ -98,6 +101,8 @@ unsigned long timeNow = 0;
 unsigned long timeSaved = 0;
 
 String receivedData;					// zmienna na dane odbierane przez Bluetooth
+
+unsigned long buzzerDuration = 0;
 
 // Prawe przednie serwo przy ciele robota
 struct RightFrontBodyServo
@@ -271,6 +276,7 @@ struct LeftRearKneeServo
 void setup() {
   Serial.begin(9600);											// inicjalizacja portu szeregowego
   Serial.println("Hello, RoboSpider here! I'm initialising now...");
+  pinMode(BUZZER_PIN, OUTPUT);            // buzzer
   if (!isBatteryVoltageOkay()) {								// jeśli napięcie baterii nieprawidłowe
     return;                                                     // przerywam
   }
@@ -285,6 +291,7 @@ bool isBatteryVoltageOkay() {
     Serial.println("Error. Battery voltage level too low...");	// wyświetlam komunikat
     battState = BatteryLow;										// ustawiam stan baterii
     state = Inactive;											// oraz stan robota
+    buzzTwoTimes();
     return false;
   }
   return true;
@@ -293,6 +300,36 @@ bool isBatteryVoltageOkay() {
 // Odczytuje przybliżoną wartość napięcia baterii [V]
 double readBatteryVoltage() {
   return static_cast<double>(analogRead(A6)) * 8.4/1024;
+}
+
+// Uruchamia buzzer na dwa krótkie piknięcia
+void buzzTwoTimes() {
+  buzzerOn();                        // włączam buzzer
+  delay(80);
+  buzzerOff();
+  delay(40);
+  buzzerOn();
+  delay(80);
+  buzzerOff();
+}
+
+// Załącza buzzer
+void buzzerOn() {
+  digitalWrite(BUZZER_PIN, HIGH);
+}
+
+// Wyłącza buzzer
+void buzzerOff() {
+  digitalWrite(BUZZER_PIN, LOW);
+  buzzerDuration = 0;
+}
+
+// Sprawdza stan buzzer
+bool isBuzzerTurnedOn() {
+  if (digitalRead(BUZZER_PIN) == HIGH) {
+    return true;
+  }
+  return false;
 }
 
 // Inicjalizacja serw
@@ -319,6 +356,7 @@ void loop() {
   }
   readSerialData();
   readBluetoothData();
+  checkIfBuzzerNeedsToGoOff();
   checkBatteryVoltageEveryTenSeconds();
   setLastCommandValue();
   robotMovement_CheckState();
@@ -342,9 +380,19 @@ void readBluetoothData() {
   }
 }
 
+// Sprawdza czy buzzer nie powinien zostać wyłączony
+void checkIfBuzzerNeedsToGoOff() {
+  timeNow = millis();
+  if (buzzerDuration > 0) {
+    if (timeNow - timeSaved >= buzzerDuration) {
+      buzzerOff();
+    }
+  }
+}
+
 // Sprawdza stan baterii co około 10 sekund
 void checkBatteryVoltageEveryTenSeconds() {
-  timeNow = millis();
+  //timeNow = millis();
   if (timeNow - timeSaved >= 10000UL) {         // jeśli minęło więcej niż 10 sekund -> sprawdzenie napięcia baterii
     timeSaved = timeNow;
     checkBatteryState();
@@ -358,11 +406,13 @@ void checkBatteryState() {
   if (batteryVoltage < BATTERY_CRITICAL) {
     battState = BatteryLow;
     Serial.println("Warning. Low battery voltage level.");
-	//Buzzer, dłuższe piknięcie
+    buzzerOn();
+    buzzerDuration = 500;
   }
   else if (batteryVoltage < BATTERY_MEDIUM) {
     Serial.println("Medium battery voltage level. It is advised to turn off the robot and start recharging.");
-	//Buzzer, krótkie piknięcie
+    buzzerOn();
+    buzzerDuration = 200;
   }
 }
 
@@ -556,6 +606,9 @@ void stateInactive() {
   servoLeft.detach();
   servoRight.detach();
   Wire.end();
+  if (isBuzzerTurnedOn()) {
+    buzzerOff();
+  }
 }
 
 // Każe robotowi stanąć na kończynach, ustawia jego stan oraz wyświetla komunikat o zakończeniu inicjalizacji
