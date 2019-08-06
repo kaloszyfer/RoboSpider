@@ -46,7 +46,10 @@
 #define BATTERY_MEDIUM 7.11
 // ------------------------------------------------------
 //domyślna wartość ograniczenia (dla funkcji limitVal(value, limit))
-#define DEFAULT_VALUE_LIMIT 86
+#define DEFAULT_VALUE_LIMIT 73
+// ------------------------------------------------------
+//pozycja kolan i bioder, przy której robot jest w pozycji stojącej (nie może być większe niż 49)
+#define STANDING_POSITION 38
 // ------------------------------------------------------
 //buzzer
 #define BUZZER_PIN 12
@@ -622,23 +625,24 @@ void stateInitialising() {
 void stillStand() {
   leftSideFrontBack(50);
   rightSideFrontBack(50);
-  leftSideUpDown(50, 0b111);
-  rightSideUpDown(50, 0b111);
+  leftSideUpDown(STANDING_POSITION, 0b111);
+  rightSideUpDown(STANDING_POSITION, 0b111);
 }
 // NA CHWILE WPROWADZONO DELAY(2)!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! pamietac, aby usunac
 void standToFront() {
   for (int8_t i = 50; i < 75; ++i)	{
     leftSideFrontBack(i);
     rightSideFrontBack(i);
-    leftSideUpDown(limitVal(i), 0b101);
-    rightSideUpDown(limitVal(i), 0b010);
+	int8_t j = map(i, 50, 100, STANDING_POSITION, 100);
+    leftSideUpDown(limitVal(j), 0b101);
+    rightSideUpDown(limitVal(j), 0b010);
     delay(1);
   }
   delay(1);
   for (int8_t i = 75; i <= 100; ++i) {
     leftSideFrontBack(i);
     rightSideFrontBack(i);
-	int8_t j = map(i, 75, 100, 75, 50);
+	int8_t j = map(i, 50, 100, 100, STANDING_POSITION);
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
     delay(1);
@@ -646,7 +650,7 @@ void standToFront() {
   for (int8_t i = 100; i > 50; --i) {
     leftSideFrontBack(i);
     rightSideFrontBack(i);
-    int8_t j = map(i, 100, 50, 50, 100);
+    int8_t j = map(i, 100, 50, STANDING_POSITION, 100);
     leftSideUpDown(limitVal(j), 0b010);
     rightSideUpDown(limitVal(j), 0b101);
     delay(1);
@@ -655,7 +659,7 @@ void standToFront() {
   for (int8_t i = 50; i >= 0; --i) {
     leftSideFrontBack(i);
     rightSideFrontBack(i);
-    int8_t j = map(i, 50, 0, 100, 50);
+    int8_t j = map(i, 50, 0, 100, STANDING_POSITION);
     leftSideUpDown(limitVal(j), 0b010);
     rightSideUpDown(limitVal(j), 0b101);
     delay(1);
@@ -695,8 +699,9 @@ void standToInitialPos() {
   {
     leftSideFrontBack(50);
     rightSideFrontBack(50);
-    leftSideUpDown(i, 0b111);
-    rightSideUpDown(i, 0b111);
+	int8_t j = map(i, 50, 100, STANDING_POSITION, 100);
+    leftSideUpDown(j, 0b111);
+    rightSideUpDown(j, 0b111);
     delay(1);
   }
 }
@@ -705,7 +710,8 @@ void stillFront() {
   for (int8_t i = 0; i < 50; ++i) {
     leftSideFrontBack(i);
     rightSideFrontBack(i);
-    int8_t j = /*map(i, 0, 50, 50, 100)*/i + 50;
+    //int8_t j = /*map(i, 0, 50, 50, 100)*/i + 50;
+	int8_t j = map(i, 0, 50, STANDING_POSITION, 100);
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
     delay(1);
@@ -714,7 +720,8 @@ void stillFront() {
   for (int8_t i = 50; i <= 100; ++i) {
     leftSideFrontBack(i);
     rightSideFrontBack(i);
-    int8_t j = /*map(i, 50, 100, 100, 50)*/150 - i;
+    //int8_t j = /*map(i, 50, 100, 100, 50)*/150 - i;
+	int8_t j = map(i, 50, 100, 100, STANDING_POSITION);
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
     delay(1);
@@ -722,7 +729,8 @@ void stillFront() {
   for (int8_t i = 100; i > 50; --i) {
     leftSideFrontBack(i);
     rightSideFrontBack(i);
-    int8_t j = /*map(i, 100, 50, 50, 100)*/150 - i;
+    //int8_t j = /*map(i, 100, 50, 50, 100)*/150 - i;
+	int8_t j = map(i, 100, 50, STANDING_POSITION, 100);
     leftSideUpDown(limitVal(j), 0b010);
     rightSideUpDown(limitVal(j), 0b101);
     delay(1);
@@ -731,7 +739,8 @@ void stillFront() {
   for (int8_t i = 50; i >= 0; --i) {
     leftSideFrontBack(i);
     rightSideFrontBack(i);
-    int8_t j = /*map(i, 50, 0, 100, 50)*/i + 50;
+    //int8_t j = /*map(i, 50, 0, 100, 50)*/i + 50;
+	int8_t j = map(i, 50, 0, 100, STANDING_POSITION);
     leftSideUpDown(limitVal(j), 0b010);
     rightSideUpDown(limitVal(j), 0b101);
     delay(1);
@@ -742,7 +751,8 @@ void frontToStand() {
   for (int8_t i = 0; i < 25; ++i) {
     leftSideFrontBack(i);
     rightSideFrontBack(i);
-	int8_t j = /*map(i, 0, 25, 50, 75)*/i + 50;
+	//int8_t j = /*map(i, 0, 25, 50, 75)*/i + 50;
+	int8_t j = map(i, 0, 50, STANDING_POSITION, 100);
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
     delay(1);
@@ -751,7 +761,8 @@ void frontToStand() {
   for (int8_t i = 25; i <= 50; ++i) {
     leftSideFrontBack(i);
     rightSideFrontBack(i);
-    int8_t j = /*map(i, 25, 50, 75, 50)*/100 - i;
+    //int8_t j = /*map(i, 25, 50, 75, 50)*/100 - i;
+	int8_t j = map(i, 0, 50, 100, STANDING_POSITION);
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
     delay(1);
@@ -815,6 +826,45 @@ void initialPosToStand() {
   {
     leftSideFrontBack(50);
     rightSideFrontBack(50);
+    //leftSideUpDown(i, 0b111);
+    //rightSideUpDown(i, 0b111);
+	int8_t subtraction = 100 - i;
+	RightFrontHipServo::setPosition(100);
+	RightFrontKneeServo::setPosition(subtraction);
+	RightMiddleHipServo::setPosition(100);
+	RightMiddleKneeServo::setPosition(subtraction);
+	RightRearHipServo::setPosition(100);
+	RightRearKneeServo::setPosition(subtraction);
+	LeftFrontHipServo::setPosition(100);
+	LeftFrontKneeServo::setPosition(subtraction);
+	LeftMiddleHipServo::setPosition(100);
+	LeftMiddleKneeServo::setPosition(subtraction);
+	LeftRearHipServo::setPosition(100);
+	LeftRearKneeServo::setPosition(subtraction);
+    delay(1);
+  }
+  for (int8_t i = 100; i >= 50; --i)
+  {
+    leftSideFrontBack(50);
+    rightSideFrontBack(50);
+    RightFrontHipServo::setPosition(i);
+    RightFrontKneeServo::setPosition(50);
+    RightMiddleHipServo::setPosition(i);
+    RightMiddleKneeServo::setPosition(50);
+    RightRearHipServo::setPosition(i);
+    RightRearKneeServo::setPosition(50);
+    LeftFrontHipServo::setPosition(i);
+    LeftFrontKneeServo::setPosition(50);
+    LeftMiddleHipServo::setPosition(i);
+    LeftMiddleKneeServo::setPosition(50);
+    LeftRearHipServo::setPosition(i);
+    LeftRearKneeServo::setPosition(50);
+    delay(1);
+  }
+  for (int8_t i = 49; i >= STANDING_POSITION; --i)
+  {
+    leftSideFrontBack(50);
+    rightSideFrontBack(50);
     leftSideUpDown(i, 0b111);
     rightSideUpDown(i, 0b111);
     delay(1);
@@ -847,16 +897,17 @@ void rightSideFrontBack(int8_t value) {
 
 // Odnóża po prawej stronie dla value=100: wybrane poprzez parametr select (bit0 - przód, bit1 - środek, bit2 - tył) na maksa do góry
 void rightSideUpDown(int8_t value, int8_t select) {
-  rightSideUpDown(value, select, 50);
+  rightSideUpDown(value, select, STANDING_POSITION);
 }
-void rightSideUpDown(int8_t value, int8_t select, int8_t defMidVal) {
+void rightSideUpDown(int8_t value, int8_t select, int8_t defStandVal) {
   int8_t subtraction = 100 - value;
-  RightFrontHipServo::setPosition((select & 0b100) ? value : defMidVal);
-  RightFrontKneeServo::setPosition((select & 0b100) ? subtraction : defMidVal);
-  RightMiddleHipServo::setPosition((select & 0b010) ? value : defMidVal);
-  RightMiddleKneeServo::setPosition((select & 0b010) ? subtraction : defMidVal);
-  RightRearHipServo::setPosition((select & 0b001) ? value : defMidVal);
-  RightRearKneeServo::setPosition((select & 0b001) ? subtraction : defMidVal);
+  int8_t defSubtraction = 100 - defStandVal;
+  RightFrontHipServo::setPosition((select & 0b100) ? value : defStandVal);
+  RightFrontKneeServo::setPosition((select & 0b100) ? subtraction : defSubtraction);
+  RightMiddleHipServo::setPosition((select & 0b010) ? value : defStandVal);
+  RightMiddleKneeServo::setPosition((select & 0b010) ? subtraction : defSubtraction);
+  RightRearHipServo::setPosition((select & 0b001) ? value : defStandVal);
+  RightRearKneeServo::setPosition((select & 0b001) ? subtraction : defSubtraction);
 }
 
 // Odnóża po lewej stronie dla value=100: skrajne na maksa do przodu, środkowe na maksa do tyłu
@@ -868,14 +919,15 @@ void leftSideFrontBack(int8_t value) {
 
 // Odnóża po lewej stronie dla value=100: wybrane poprzez parametr select (bit0 - przód, bit1 - środek, bit2 - tył) na maksa do góry
 void leftSideUpDown(int8_t value, int8_t select) {
-  leftSideUpDown(value, select, 50);
+  leftSideUpDown(value, select, STANDING_POSITION);
 }
-void leftSideUpDown(int8_t value, int8_t select, int8_t defMidVal) {
+void leftSideUpDown(int8_t value, int8_t select, int8_t defStandVal) {
   int8_t subtraction = 100 - value;
-  LeftFrontHipServo::setPosition((select & 0b100) ? value : defMidVal);
-  LeftFrontKneeServo::setPosition((select & 0b100) ? subtraction : defMidVal);
-  LeftMiddleHipServo::setPosition((select & 0b010) ? value : defMidVal);
-  LeftMiddleKneeServo::setPosition((select & 0b010) ? subtraction : defMidVal);
-  LeftRearHipServo::setPosition((select & 0b001) ? value : defMidVal);
-  LeftRearKneeServo::setPosition((select & 0b001) ? subtraction : defMidVal);
+  int8_t defSubtraction = 100 - defStandVal;
+  LeftFrontHipServo::setPosition((select & 0b100) ? value : defStandVal);
+  LeftFrontKneeServo::setPosition((select & 0b100) ? subtraction : defSubtraction);
+  LeftMiddleHipServo::setPosition((select & 0b010) ? value : defStandVal);
+  LeftMiddleKneeServo::setPosition((select & 0b010) ? subtraction : defSubtraction);
+  LeftRearHipServo::setPosition((select & 0b001) ? value : defStandVal);
+  LeftRearKneeServo::setPosition((select & 0b001) ? subtraction : defSubtraction);
 }
