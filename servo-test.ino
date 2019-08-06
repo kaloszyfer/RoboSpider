@@ -46,7 +46,7 @@
 #define BATTERY_MEDIUM 7.11
 // ------------------------------------------------------
 //domyślna wartość ograniczenia (dla funkcji limitVal(value, limit))
-#define DEFAULT_VALUE_LIMIT 75
+#define DEFAULT_VALUE_LIMIT 86
 // ------------------------------------------------------
 //buzzer
 #define BUZZER_PIN 12
@@ -369,7 +369,7 @@ void readSerialData() {
     data += Serial.readString().charAt(0);						// odczytuję serię danych z portu szeregowego, a pierwszy znak dopisuję do zmiennej
     receivedData = "";											// zeruję globalną zmienną na dane
     receivedData += static_cast<char>(data.toInt());            // zamieniam dane zawierające jeden znak na integer, rzutuję na char i dopisuję do zmiennej globalnej
-    Serial.println("I got some data!");
+    Serial.println("I got some data from serial port!");
   }
 }
 
@@ -632,16 +632,16 @@ void standToFront() {
     rightSideFrontBack(i);
     leftSideUpDown(limitVal(i), 0b101);
     rightSideUpDown(limitVal(i), 0b010);
-    delay(2);
+    delay(1);
   }
-  delay(2);
+  delay(1);
   for (int8_t i = 75; i <= 100; ++i) {
     leftSideFrontBack(i);
     rightSideFrontBack(i);
 	int8_t j = map(i, 75, 100, 75, 50);
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
-    delay(2);
+    delay(1);
   }
   for (int8_t i = 100; i > 50; --i) {
     leftSideFrontBack(i);
@@ -649,16 +649,16 @@ void standToFront() {
     int8_t j = map(i, 100, 50, 50, 100);
     leftSideUpDown(limitVal(j), 0b010);
     rightSideUpDown(limitVal(j), 0b101);
-    delay(2);
+    delay(1);
   }
-  delay(2);
+  delay(1);
   for (int8_t i = 50; i >= 0; --i) {
     leftSideFrontBack(i);
     rightSideFrontBack(i);
     int8_t j = map(i, 50, 0, 100, 50);
     leftSideUpDown(limitVal(j), 0b010);
     rightSideUpDown(limitVal(j), 0b101);
-    delay(2);
+    delay(1);
   }
 }
 
@@ -697,7 +697,7 @@ void standToInitialPos() {
     rightSideFrontBack(50);
     leftSideUpDown(i, 0b111);
     rightSideUpDown(i, 0b111);
-    delay(2);
+    delay(1);
   }
 }
 
@@ -708,16 +708,16 @@ void stillFront() {
     int8_t j = /*map(i, 0, 50, 50, 100)*/i + 50;
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
-    delay(2);
+    delay(1);
   }
-  delay(2);
+  delay(1);
   for (int8_t i = 50; i <= 100; ++i) {
     leftSideFrontBack(i);
     rightSideFrontBack(i);
     int8_t j = /*map(i, 50, 100, 100, 50)*/150 - i;
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
-    delay(2);
+    delay(1);
   }
   for (int8_t i = 100; i > 50; --i) {
     leftSideFrontBack(i);
@@ -725,16 +725,16 @@ void stillFront() {
     int8_t j = /*map(i, 100, 50, 50, 100)*/150 - i;
     leftSideUpDown(limitVal(j), 0b010);
     rightSideUpDown(limitVal(j), 0b101);
-    delay(2);
+    delay(1);
   }
-  delay(2);
+  delay(1);
   for (int8_t i = 50; i >= 0; --i) {
     leftSideFrontBack(i);
     rightSideFrontBack(i);
     int8_t j = /*map(i, 50, 0, 100, 50)*/i + 50;
     leftSideUpDown(limitVal(j), 0b010);
     rightSideUpDown(limitVal(j), 0b101);
-    delay(2);
+    delay(1);
   }
 }
 
@@ -745,16 +745,16 @@ void frontToStand() {
 	int8_t j = /*map(i, 0, 25, 50, 75)*/i + 50;
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
-    delay(2);
+    delay(1);
   }
-  delay(2);
+  delay(1);
   for (int8_t i = 25; i <= 50; ++i) {
     leftSideFrontBack(i);
     rightSideFrontBack(i);
     int8_t j = /*map(i, 25, 50, 75, 50)*/100 - i;
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
-    delay(2);
+    delay(1);
   }
 }
 
@@ -817,7 +817,7 @@ void initialPosToStand() {
     rightSideFrontBack(50);
     leftSideUpDown(i, 0b111);
     rightSideUpDown(i, 0b111);
-    delay(2);
+    delay(1);
   }
 }
 
