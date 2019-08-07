@@ -93,101 +93,100 @@ bool isActive = true;             // flaga mówiąca o aktywności programu gł�
 auto servos = Adafruit_PWMServoDriver();
 Servo servoLeft;
 Servo servoRight;
-SoftwareSerial btSerial(5,4);			// Bluetooth(rx, tx)
+SoftwareSerial btSerial(5,4);      // Bluetooth(rx, tx)
 
 RobotState state = Initialising;
 BatteryState battState = BatteryOK;
 RobotCommand lastCommand = Stand;
 
-//uint16_t pulselen/* = SERVOMID*/;		// długość impulsu wysyłanego do sterownika PWM (12bit)
 unsigned long timeNow = 0;
 unsigned long timeSaved = 0;
 
-String receivedData;					// zmienna na dane odbierane przez Bluetooth
+String receivedData;          // zmienna na dane odbierane przez Bluetooth
 
 unsigned long buzzerDuration = 0;
 
 // Prawe przednie serwo przy ciele robota
 struct RightFrontBodyServo
 {
-	// Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
-	static void setPosition(int8_t value) {
-		servoRight.write(map(value, 0, 100, /*120, 60*//*110, 70*/104, 76));
-	}
+  // Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
+  static void setPosition(int8_t value) {
+    servoRight.write(map(value, 0, 100, /*120, 60*//*110, 70*/104, 76));
+  }
 };
 
 // Prawe przednie serwo - "biodro" robota
 struct RightFrontHipServo
 {
-	// Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
-	static void setPosition(int8_t value) {
-		servos.setPWM(SERVO_RIGHT_FRONT1NUM, 0, map(value, 0, 100, SERVOMIN_1, SERVOMAX_1));
-	}
+  // Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
+  static void setPosition(int8_t value) {
+    servos.setPWM(SERVO_RIGHT_FRONT1NUM, 0, map(value, 0, 100, SERVOMIN_1, SERVOMAX_1));
+  }
 };
 
 // Prawe przednie serwo - "kolano" robota
 struct RightFrontKneeServo
 {
-	// Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
-	static void setPosition(int8_t value) {
-		servos.setPWM(SERVO_RIGHT_FRONT2NUM, 0, map(value, 0, 100, SERVOMAX_2, SERVOMIN_2));
-	}
+  // Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
+  static void setPosition(int8_t value) {
+    servos.setPWM(SERVO_RIGHT_FRONT2NUM, 0, map(value, 0, 100, SERVOMAX_2, SERVOMIN_2));
+  }
 };
 
 
 // Prawe środkowe serwo przy ciele robota
 struct RightMiddleBodyServo
 {
-	// Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
-	static void setPosition(int8_t value) {
-		servos.setPWM(SERVO_RIGHT_MID0NUM, 0, map(value, 0, 100, SERVOMAX_0, SERVOMIN_0));
-	}
+  // Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
+  static void setPosition(int8_t value) {
+    servos.setPWM(SERVO_RIGHT_MID0NUM, 0, map(value, 0, 100, SERVOMAX_0, SERVOMIN_0));
+  }
 };
 
 // Prawe środkowe serwo - "biodro" robota
 struct RightMiddleHipServo
 {
-	// Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
-	static void setPosition(int8_t value) {
-		servos.setPWM(SERVO_RIGHT_MID1NUM, 0, map(value, 0, 100, SERVOMAX_1, SERVOMIN_1));
-	}
+  // Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
+  static void setPosition(int8_t value) {
+    servos.setPWM(SERVO_RIGHT_MID1NUM, 0, map(value, 0, 100, SERVOMAX_1, SERVOMIN_1));
+  }
 };
 
 // Prawe środkowe serwo - "kolano" robota
 struct RightMiddleKneeServo
 {
-	// Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
-	static void setPosition(int8_t value) {
-		servos.setPWM(SERVO_RIGHT_MID2NUM, 0, map(value, 0, 100, SERVOMIN_2, SERVOMAX_2));
-	}
+  // Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
+  static void setPosition(int8_t value) {
+    servos.setPWM(SERVO_RIGHT_MID2NUM, 0, map(value, 0, 100, SERVOMIN_2, SERVOMAX_2));
+  }
 };
 
 
 // Prawe tylne serwo przy ciele robota
 struct RightRearBodyServo
 {
-	// Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
-	static void setPosition(int8_t value) {
-		servos.setPWM(SERVO_RIGHT_REAR0NUM, 0, map(value, 0, 100, SERVOMAX_0, SERVOMIN_0));
-	}
+  // Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
+  static void setPosition(int8_t value) {
+    servos.setPWM(SERVO_RIGHT_REAR0NUM, 0, map(value, 0, 100, SERVOMAX_0, SERVOMIN_0));
+  }
 };
 
 // Prawe tylne serwo - "biodro" robota
 struct RightRearHipServo
 {
-	// Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
-	static void setPosition(int8_t value) {
-		servos.setPWM(SERVO_RIGHT_REAR1NUM, 0, map(value, 0, 100, SERVOMAX_1, SERVOMIN_1));
-	}
+  // Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
+  static void setPosition(int8_t value) {
+    servos.setPWM(SERVO_RIGHT_REAR1NUM, 0, map(value, 0, 100, SERVOMAX_1, SERVOMIN_1));
+  }
 };
 
 // Prawe tylne serwo - "kolano" robota
 struct RightRearKneeServo
 {
-	// Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
-	static void setPosition(int8_t value) {
-		servos.setPWM(SERVO_RIGHT_REAR2NUM, 0, map(value, 0, 100, SERVOMIN_2, SERVOMAX_2));
-	}
+  // Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
+  static void setPosition(int8_t value) {
+    servos.setPWM(SERVO_RIGHT_REAR2NUM, 0, map(value, 0, 100, SERVOMIN_2, SERVOMAX_2));
+  }
 };
 
 
@@ -195,106 +194,107 @@ struct RightRearKneeServo
 // Lewe przednie serwo przy ciele robota
 struct LeftFrontBodyServo
 {
-	// Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
-	static void setPosition(int8_t value) {
-		servoLeft.write(map(value, 0, 100, /*60, 120*//*70, 110*/76, 104));
-	}
+  // Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
+  static void setPosition(int8_t value) {
+    servoLeft.write(map(value, 0, 100, /*60, 120*//*70, 110*/76, 104));
+  }
 };
 
 // Lewe przednie serwo - "biodro" robota
 struct LeftFrontHipServo
 {
-	// Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
-	static void setPosition(int8_t value) {
-		servos.setPWM(SERVO_LEFT_FRONT1NUM, 0, map(value, 0, 100, SERVOMAX_1, SERVOMIN_1));
-	}
+  // Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
+  static void setPosition(int8_t value) {
+    servos.setPWM(SERVO_LEFT_FRONT1NUM, 0, map(value, 0, 100, SERVOMAX_1, SERVOMIN_1));
+  }
 };
 
 // Lewe przednie serwo - "kolano" robota
 struct LeftFrontKneeServo
 {
-	// Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
-	static void setPosition(int8_t value) {
-		servos.setPWM(SERVO_LEFT_FRONT2NUM, 0, map(value, 0, 100, SERVOMIN_2, SERVOMAX_2));
-	}
+  // Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
+  static void setPosition(int8_t value) {
+    servos.setPWM(SERVO_LEFT_FRONT2NUM, 0, map(value, 0, 100, SERVOMIN_2, SERVOMAX_2));
+  }
 };
 
 
 // Lewe środkowe serwo przy ciele robota
 struct LeftMiddleBodyServo
 {
-	// Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
-	static void setPosition(int8_t value) {
-		servos.setPWM(SERVO_LEFT_MID0NUM, 0, map(value, 0, 100, SERVOMIN_0, SERVOMAX_0));
-	}
+  // Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
+  static void setPosition(int8_t value) {
+    servos.setPWM(SERVO_LEFT_MID0NUM, 0, map(value, 0, 100, SERVOMIN_0, SERVOMAX_0));
+  }
 };
 
 // Lewe środkowe serwo - "biodro" robota
 struct LeftMiddleHipServo
 {
-	// Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
-	static void setPosition(int8_t value) {
-		servos.setPWM(SERVO_LEFT_MID1NUM, 0, map(value, 0, 100, SERVOMIN_1, SERVOMAX_1));
-	}
+  // Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
+  static void setPosition(int8_t value) {
+    servos.setPWM(SERVO_LEFT_MID1NUM, 0, map(value, 0, 100, SERVOMIN_1, SERVOMAX_1));
+  }
 };
 
 // Lewe środkowe serwo - "kolano" robota
 struct LeftMiddleKneeServo
 {
-	// Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
-	static void setPosition(int8_t value) {
-		servos.setPWM(SERVO_LEFT_MID2NUM, 0, map(value, 0, 100, SERVOMAX_2, SERVOMIN_2));
-	}
+  // Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
+  static void setPosition(int8_t value) {
+    servos.setPWM(SERVO_LEFT_MID2NUM, 0, map(value, 0, 100, SERVOMAX_2, SERVOMIN_2));
+  }
 };
 
 
 // Lewe tylne serwo przy ciele robota
 struct LeftRearBodyServo
 {
-	// Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
-	static void setPosition(int8_t value) {
-		servos.setPWM(SERVO_LEFT_REAR0NUM, 0, map(value, 0, 100, SERVOMIN_0, SERVOMAX_0));
-	}
+  // Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
+  static void setPosition(int8_t value) {
+    servos.setPWM(SERVO_LEFT_REAR0NUM, 0, map(value, 0, 100, SERVOMIN_0, SERVOMAX_0));
+  }
 };
 
 // Lewe tylne serwo - "biodro" robota
 struct LeftRearHipServo
 {
-	// Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
-	static void setPosition(int8_t value) {
-		servos.setPWM(SERVO_LEFT_REAR1NUM, 0, map(value, 0, 100, SERVOMIN_1, SERVOMAX_1));
-	}
+  // Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
+  static void setPosition(int8_t value) {
+    servos.setPWM(SERVO_LEFT_REAR1NUM, 0, map(value, 0, 100, SERVOMIN_1, SERVOMAX_1));
+  }
 };
 
 // Lewe tylne serwo - "kolano" robota
 struct LeftRearKneeServo
 {
-	// Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
-	static void setPosition(int8_t value) {
-		servos.setPWM(SERVO_LEFT_REAR2NUM, 0, map(value, 0, 100, SERVOMAX_2, SERVOMIN_2));
-	}
+  // Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
+  static void setPosition(int8_t value) {
+    servos.setPWM(SERVO_LEFT_REAR2NUM, 0, map(value, 0, 100, SERVOMAX_2, SERVOMIN_2));
+  }
 };
 
 
 void setup() {
-  Serial.begin(9600);											// inicjalizacja portu szeregowego
+  Serial.begin(9600);                     // inicjalizacja portu szeregowego
   Serial.println("Hello, RoboSpider here! I'm initialising now...");
   pinMode(BUZZER_PIN, OUTPUT);            // buzzer
-  if (!isBatteryVoltageOkay()) {								// jeśli napięcie baterii nieprawidłowe
+  if (!isBatteryVoltageOkay()) {                // jeśli napięcie baterii nieprawidłowe
     return;                                                     // przerywam
   }
-  servoInit();													// inicjalizacja serw
+  servoInit();                          // inicjalizacja serw
   btSerial.begin(9600);                                         // inicjalizacja obsługi BT
-  delay(500);													// chwila "odpoczynku"..
+  buzzOnce();                         // pojedynczy sygnał mówiący o prawidłowej inicjalizacji
+  delay(500);                         // chwila "odpoczynku"..
 }
 
 // Zwraca true, jeśli stan baterii jest w porządku
 bool isBatteryVoltageOkay() {
   if (readBatteryVoltage() < BATTERY_CRITICAL) {                // jeśli bardzo niskie napięcie baterii
-    Serial.println("Error. Battery voltage level too low...");	// wyświetlam komunikat
-    battState = BatteryLow;										// ustawiam stan baterii
-    state = Inactive;											// oraz stan robota
-    buzzTwoTimes();
+    Serial.println("Error. Battery voltage level too low...");  // wyświetlam komunikat
+    battState = BatteryLow;                   // ustawiam stan baterii
+    state = Inactive;                     // oraz stan robota
+    buzzTwice();
     return false;
   }
   return true;
@@ -305,15 +305,18 @@ double readBatteryVoltage() {
   return static_cast<double>(analogRead(A6)) * 8.4/1024;
 }
 
-// Uruchamia buzzer na dwa krótkie piknięcia
-void buzzTwoTimes() {
+// Uruchamia buzzer na jedno krótkie piknięcie
+void buzzOnce() {
   buzzerOn();                        // włączam buzzer
   delay(80);
   buzzerOff();
+}
+
+// Uruchamia buzzer na dwa krótkie piknięcia
+void buzzTwice() {
+  buzzOnce();
   delay(40);
-  buzzerOn();
-  delay(80);
-  buzzerOff();
+  buzzOnce();
 }
 
 // Załącza buzzer
@@ -368,9 +371,9 @@ void loop() {
 // Odczytuje dane z portu szeregowego (np. wiadomość "1example" zostanie przetworzona na wartość 1)
 void readSerialData() {
   if (Serial.available()) {
-    String data;												// tworzę pustą zmienną na dane
-    data += Serial.readString().charAt(0);						// odczytuję serię danych z portu szeregowego, a pierwszy znak dopisuję do zmiennej
-    receivedData = "";											// zeruję globalną zmienną na dane
+    String data;                        // tworzę pustą zmienną na dane
+    data += Serial.readString().charAt(0);            // odczytuję serię danych z portu szeregowego, a pierwszy znak dopisuję do zmiennej
+    receivedData = "";                      // zeruję globalną zmienną na dane
     receivedData += static_cast<char>(data.toInt());            // zamieniam dane zawierające jeden znak na integer, rzutuję na char i dopisuję do zmiennej globalnej
     Serial.println("I got some data from serial port!");
   }
@@ -379,7 +382,7 @@ void readSerialData() {
 // Odczytuje dane z modułu Bluetooth
 void readBluetoothData() {
   if (btSerial.available()) {
-    receivedData = btSerial.readString();		// zapis serii odebranych bajtów do zmiennej
+    receivedData = btSerial.readString();   // zapis serii odebranych bajtów do zmiennej
   }
 }
 
@@ -422,8 +425,8 @@ void checkBatteryState() {
 // Przypisuje ostatnio odebraną komendę do zmiennej
 void setLastCommandValue() {
   if ((state != Inactive) && (battState != BatteryLow)) {
-    if (receivedData.length()) {										// jeśli jakiekolwiek dane odebrane
-      lastCommand = static_cast<RobotCommand>(receivedData.charAt(0));	// zrzutowanie pierwszego bajtu ostatnio odebranej serii na enum komendy robota
+    if (receivedData.length()) {                    // jeśli jakiekolwiek dane odebrane
+      lastCommand = static_cast<RobotCommand>(receivedData.charAt(0));  // zrzutowanie pierwszego bajtu ostatnio odebranej serii na enum komendy robota
     }
   }
   else {
@@ -630,22 +633,22 @@ void stillStand() {
 }
 // NA CHWILE WPROWADZONO DELAY(2)!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! pamietac, aby usunac
 void standToFront() {
-  for (int8_t i = 50; i < 75; ++i)	{
+  for (int8_t i = 50; i < 75; ++i)  {
     leftSideFrontBack(i);
     rightSideFrontBack(i);
-	int8_t j = map(i, 50, 100, STANDING_POSITION, 100);
+  int8_t j = map(i, 50, 100, STANDING_POSITION, 100);
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
-    delay(1);
+    //delay(1);
   }
-  delay(1);
+  //delay(1);
   for (int8_t i = 75; i <= 100; ++i) {
     leftSideFrontBack(i);
     rightSideFrontBack(i);
-	int8_t j = map(i, 50, 100, 100, STANDING_POSITION);
+  int8_t j = map(i, 50, 100, 100, STANDING_POSITION);
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
-    delay(1);
+    //delay(1);
   }
   for (int8_t i = 100; i > 50; --i) {
     leftSideFrontBack(i);
@@ -653,21 +656,54 @@ void standToFront() {
     int8_t j = map(i, 100, 50, STANDING_POSITION, 100);
     leftSideUpDown(limitVal(j), 0b010);
     rightSideUpDown(limitVal(j), 0b101);
-    delay(1);
+    //delay(1);
   }
-  delay(1);
+  //delay(1);
   for (int8_t i = 50; i >= 0; --i) {
     leftSideFrontBack(i);
     rightSideFrontBack(i);
     int8_t j = map(i, 50, 0, 100, STANDING_POSITION);
     leftSideUpDown(limitVal(j), 0b010);
     rightSideUpDown(limitVal(j), 0b101);
-    delay(1);
+    //delay(1);
   }
 }
 
 void standToBack() {
-  //
+  for (int8_t i = 50; i > 25; --i) {
+    leftSideFrontBack(i);
+    rightSideFrontBack(i);
+    int8_t j = map(i, 50, 0, STANDING_POSITION, 100);
+    leftSideUpDown(limitVal(j), 0b101);
+    rightSideUpDown(limitVal(j), 0b010);
+    //delay(1);
+  }
+  //delay(1);
+  for (int8_t i = 25; i >= 0; --i) {
+    leftSideFrontBack(i);
+    rightSideFrontBack(i);
+    int8_t j = map(i, 50, 0, 100, STANDING_POSITION);
+    leftSideUpDown(limitVal(j), 0b101);
+    rightSideUpDown(limitVal(j), 0b010);
+    //delay(1);
+  }
+  for (int8_t i = 0; i < 50; ++i) {
+    leftSideFrontBack(i);
+    rightSideFrontBack(i);
+    int8_t j = map(i, 0, 50, STANDING_POSITION, 100);
+    leftSideUpDown(limitVal(j), 0b010);
+    rightSideUpDown(limitVal(j), 0b101);
+    //delay(1);
+  }
+  //delay(1);
+  for (int8_t i = 50; i <= 100; ++i) {
+    leftSideFrontBack(i);
+    rightSideFrontBack(i);
+    int8_t j = map(i, 50, 100, 100, STANDING_POSITION);
+    leftSideUpDown(limitVal(j), 0b010);
+    rightSideUpDown(limitVal(j), 0b101);
+    //delay(1);
+  }
 }
 
 void standToLeft() {
@@ -679,11 +715,77 @@ void standToRight() {
 }
 
 void standToTurnLeft() {
-  //
+  for (int8_t i = 50; i < 75; ++i) {
+    leftSideFrontBack(100 - i);
+    rightSideFrontBack(i);
+    int8_t j = map(i, 50, 100, STANDING_POSITION, 100);
+    leftSideUpDown(limitVal(j), 0b101);
+    rightSideUpDown(limitVal(j), 0b010);
+    //delay(1);
+  }
+  //delay(1);
+  for (int8_t i = 75; i <= 100; ++i) {
+    leftSideFrontBack(100 - i);
+    rightSideFrontBack(i);
+    int8_t j = map(i, 50, 100, 100, STANDING_POSITION);
+    leftSideUpDown(limitVal(j), 0b101);
+    rightSideUpDown(limitVal(j), 0b010);
+    //delay(1);
+  }
+  for (int8_t i = 100; i > 50; --i) {
+    leftSideFrontBack(100 - i);
+    rightSideFrontBack(i);
+    int8_t j = map(i, 100, 50, STANDING_POSITION, 100);
+    leftSideUpDown(limitVal(j), 0b010);
+    rightSideUpDown(limitVal(j), 0b101);
+    //delay(1);
+  }
+  //delay(1);
+  for (int8_t i = 50; i >= 0; --i) {
+    leftSideFrontBack(100 - i);
+    rightSideFrontBack(i);
+    int8_t j = map(i, 50, 0, 100, STANDING_POSITION);
+    leftSideUpDown(limitVal(j), 0b010);
+    rightSideUpDown(limitVal(j), 0b101);
+    //delay(1);
+  }
 }
 
 void standToTurnRight() {
-  //
+  for (int8_t i = 50; i < 75; ++i) {
+    leftSideFrontBack(i);
+    rightSideFrontBack(100 - i);
+    int8_t j = map(i, 50, 100, STANDING_POSITION, 100);
+    leftSideUpDown(limitVal(j), 0b101);
+    rightSideUpDown(limitVal(j), 0b010);
+    //delay(1);
+  }
+  //delay(1);
+  for (int8_t i = 75; i <= 100; ++i) {
+    leftSideFrontBack(i);
+    rightSideFrontBack(100 - i);
+    int8_t j = map(i, 50, 100, 100, STANDING_POSITION);
+    leftSideUpDown(limitVal(j), 0b101);
+    rightSideUpDown(limitVal(j), 0b010);
+    //delay(1);
+  }
+  for (int8_t i = 100; i > 50; --i) {
+    leftSideFrontBack(i);
+    rightSideFrontBack(100 - i);
+    int8_t j = map(i, 100, 50, STANDING_POSITION, 100);
+    leftSideUpDown(limitVal(j), 0b010);
+    rightSideUpDown(limitVal(j), 0b101);
+    //delay(1);
+  }
+  //delay(1);
+  for (int8_t i = 50; i >= 0; --i) {
+    leftSideFrontBack(i);
+    rightSideFrontBack(100 - i);
+    int8_t j = map(i, 50, 0, 100, STANDING_POSITION);
+    leftSideUpDown(limitVal(j), 0b010);
+    rightSideUpDown(limitVal(j), 0b101);
+    //delay(1);
+  }
 }
 
 //void standToCalibrate() {
@@ -699,10 +801,10 @@ void standToInitialPos() {
   {
     leftSideFrontBack(50);
     rightSideFrontBack(50);
-	int8_t j = map(i, 50, 100, STANDING_POSITION, 100);
+  int8_t j = map(i, 50, 100, STANDING_POSITION, 100);
     leftSideUpDown(j, 0b111);
     rightSideUpDown(j, 0b111);
-    delay(1);
+    //delay(1);
   }
 }
 
@@ -711,39 +813,39 @@ void stillFront() {
     leftSideFrontBack(i);
     rightSideFrontBack(i);
     //int8_t j = /*map(i, 0, 50, 50, 100)*/i + 50;
-	int8_t j = map(i, 0, 50, STANDING_POSITION, 100);
+  int8_t j = map(i, 0, 50, STANDING_POSITION, 100);
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
-    delay(1);
+    //delay(1);
   }
-  delay(1);
+  //delay(1);
   for (int8_t i = 50; i <= 100; ++i) {
     leftSideFrontBack(i);
     rightSideFrontBack(i);
     //int8_t j = /*map(i, 50, 100, 100, 50)*/150 - i;
-	int8_t j = map(i, 50, 100, 100, STANDING_POSITION);
+  int8_t j = map(i, 50, 100, 100, STANDING_POSITION);
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
-    delay(1);
+    //delay(1);
   }
   for (int8_t i = 100; i > 50; --i) {
     leftSideFrontBack(i);
     rightSideFrontBack(i);
     //int8_t j = /*map(i, 100, 50, 50, 100)*/150 - i;
-	int8_t j = map(i, 100, 50, STANDING_POSITION, 100);
+  int8_t j = map(i, 100, 50, STANDING_POSITION, 100);
     leftSideUpDown(limitVal(j), 0b010);
     rightSideUpDown(limitVal(j), 0b101);
-    delay(1);
+    //delay(1);
   }
-  delay(1);
+  //delay(1);
   for (int8_t i = 50; i >= 0; --i) {
     leftSideFrontBack(i);
     rightSideFrontBack(i);
     //int8_t j = /*map(i, 50, 0, 100, 50)*/i + 50;
-	int8_t j = map(i, 50, 0, 100, STANDING_POSITION);
+  int8_t j = map(i, 50, 0, 100, STANDING_POSITION);
     leftSideUpDown(limitVal(j), 0b010);
     rightSideUpDown(limitVal(j), 0b101);
-    delay(1);
+    //delay(1);
   }
 }
 
@@ -751,30 +853,79 @@ void frontToStand() {
   for (int8_t i = 0; i < 25; ++i) {
     leftSideFrontBack(i);
     rightSideFrontBack(i);
-	//int8_t j = /*map(i, 0, 25, 50, 75)*/i + 50;
-	int8_t j = map(i, 0, 50, STANDING_POSITION, 100);
+  //int8_t j = /*map(i, 0, 25, 50, 75)*/i + 50;
+  int8_t j = map(i, 0, 50, STANDING_POSITION, 100);
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
-    delay(1);
+    //delay(1);
   }
-  delay(1);
+  //delay(1);
   for (int8_t i = 25; i <= 50; ++i) {
     leftSideFrontBack(i);
     rightSideFrontBack(i);
     //int8_t j = /*map(i, 25, 50, 75, 50)*/100 - i;
-	int8_t j = map(i, 0, 50, 100, STANDING_POSITION);
+  int8_t j = map(i, 0, 50, 100, STANDING_POSITION);
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
-    delay(1);
+    //delay(1);
   }
 }
 
 void stillBack() {
-  //
+  for (int8_t i = 100; i > 50; --i) {
+    leftSideFrontBack(i);
+    rightSideFrontBack(i);
+    int8_t j = map(i, 100, 50, STANDING_POSITION, 100);
+    leftSideUpDown(limitVal(j), 0b101);
+    rightSideUpDown(limitVal(j), 0b010);
+    //delay(1);
+  }
+  //delay(1);
+  for (int8_t i = 50; i >= 0; --i) {
+    leftSideFrontBack(i);
+    rightSideFrontBack(i);
+    int8_t j = map(i, 50, 0, 100, STANDING_POSITION);
+    leftSideUpDown(limitVal(j), 0b101);
+    rightSideUpDown(limitVal(j), 0b010);
+    //delay(1);
+  }
+  for (int8_t i = 0; i < 50; ++i) {
+    leftSideFrontBack(i);
+    rightSideFrontBack(i);
+    int8_t j = map(i, 0, 50, STANDING_POSITION, 100);
+    leftSideUpDown(limitVal(j), 0b010);
+    rightSideUpDown(limitVal(j), 0b101);
+    //delay(1);
+  }
+  //delay(1);
+  for (int8_t i = 50; i <= 100; ++i) {
+    leftSideFrontBack(i);
+    rightSideFrontBack(i);
+    int8_t j = map(i, 50, 100, 100, STANDING_POSITION);
+    leftSideUpDown(limitVal(j), 0b010);
+    rightSideUpDown(limitVal(j), 0b101);
+    //delay(1);
+  }
 }
 
 void backToStand() {
-  //
+  for (int8_t i = 100; i > 75; --i) {
+    leftSideFrontBack(i);
+    rightSideFrontBack(i);
+    int8_t j = map(i, 100, 50, STANDING_POSITION, 100);
+    leftSideUpDown(limitVal(j), 0b101);
+    rightSideUpDown(limitVal(j), 0b010);
+    //delay(1);
+  }
+  //delay(1);
+  for (int8_t i = 75; i >= 50; --i) {
+    leftSideFrontBack(i);
+    rightSideFrontBack(i);
+    int8_t j = map(i, 100, 50, 100, STANDING_POSITION);
+    leftSideUpDown(limitVal(j), 0b101);
+    rightSideUpDown(limitVal(j), 0b010);
+    //delay(1);
+  }
 }
 
 void stillLeft() {
@@ -794,19 +945,117 @@ void rightToStand() {
 }
 
 void stillTurningLeft() {
-  //
+  for (int8_t i = 0; i < 50; ++i) {
+    leftSideFrontBack(100 - i);
+    rightSideFrontBack(i);
+    int8_t j = map(i, 0, 50, STANDING_POSITION, 100);
+    leftSideUpDown(limitVal(j), 0b101);
+    rightSideUpDown(limitVal(j), 0b010);
+    //delay(1);
+  }
+  //delay(1);
+  for (int8_t i = 50; i <= 100; ++i) {
+    leftSideFrontBack(100 - i);
+    rightSideFrontBack(i);
+    int8_t j = map(i, 50, 100, 100, STANDING_POSITION);
+    leftSideUpDown(limitVal(j), 0b101);
+    rightSideUpDown(limitVal(j), 0b010);
+    //delay(1);
+  }
+  for (int8_t i = 100; i > 50; --i) {
+    leftSideFrontBack(100 - i);
+    rightSideFrontBack(i);
+    int8_t j = map(i, 100, 50, STANDING_POSITION, 100);
+    leftSideUpDown(limitVal(j), 0b010);
+    rightSideUpDown(limitVal(j), 0b101);
+    //delay(1);
+  }
+  //delay(1);
+  for (int8_t i = 50; i >= 0; --i) {
+    leftSideFrontBack(100 - i);
+    rightSideFrontBack(i);
+    int8_t j = map(i, 50, 0, 100, STANDING_POSITION);
+    leftSideUpDown(limitVal(j), 0b010);
+    rightSideUpDown(limitVal(j), 0b101);
+    //delay(1);
+  }
 }
 
 void turningLeftToStand() {
-  //
+  for (int8_t i = 0; i < 25; ++i) {
+    leftSideFrontBack(100 - i);
+    rightSideFrontBack(i);
+    int8_t j = map(i, 0, 50, STANDING_POSITION, 100);
+    leftSideUpDown(limitVal(j), 0b101);
+    rightSideUpDown(limitVal(j), 0b010);
+    //delay(1);
+  }
+  //delay(1);
+  for (int8_t i = 25; i <= 50; ++i) {
+    leftSideFrontBack(100 - i);
+    rightSideFrontBack(i);
+    int8_t j = map(i, 0, 50, 100, STANDING_POSITION);
+    leftSideUpDown(limitVal(j), 0b101);
+    rightSideUpDown(limitVal(j), 0b010);
+    //delay(1);
+  }
 }
 
 void stillTurningRight() {
-  //
+  for (int8_t i = 0; i < 50; ++i) {
+    leftSideFrontBack(i);
+    rightSideFrontBack(100 - i);
+    int8_t j = map(i, 0, 50, STANDING_POSITION, 100);
+    leftSideUpDown(limitVal(j), 0b101);
+    rightSideUpDown(limitVal(j), 0b010);
+    //delay(1);
+  }
+  //delay(1);
+  for (int8_t i = 50; i <= 100; ++i) {
+    leftSideFrontBack(i);
+    rightSideFrontBack(100 - i);
+    int8_t j = map(i, 50, 100, 100, STANDING_POSITION);
+    leftSideUpDown(limitVal(j), 0b101);
+    rightSideUpDown(limitVal(j), 0b010);
+    //delay(1);
+  }
+  for (int8_t i = 100; i > 50; --i) {
+    leftSideFrontBack(i);
+    rightSideFrontBack(100 - i);
+    int8_t j = map(i, 100, 50, STANDING_POSITION, 100);
+    leftSideUpDown(limitVal(j), 0b010);
+    rightSideUpDown(limitVal(j), 0b101);
+    //delay(1);
+  }
+  //delay(1);
+  for (int8_t i = 50; i >= 0; --i) {
+    leftSideFrontBack(i);
+    rightSideFrontBack(100 - i);
+    int8_t j = map(i, 50, 0, 100, STANDING_POSITION);
+    leftSideUpDown(limitVal(j), 0b010);
+    rightSideUpDown(limitVal(j), 0b101);
+    //delay(1);
+  }
 }
 
 void turningRightToStand() {
-  //
+  for (int8_t i = 0; i < 25; ++i) {
+    leftSideFrontBack(i);
+    rightSideFrontBack(100 - i);
+    int8_t j = map(i, 0, 50, STANDING_POSITION, 100);
+    leftSideUpDown(limitVal(j), 0b101);
+    rightSideUpDown(limitVal(j), 0b010);
+    //delay(1);
+  }
+  //delay(1);
+  for (int8_t i = 25; i <= 50; ++i) {
+    leftSideFrontBack(i);
+    rightSideFrontBack(100 - i);
+    int8_t j = map(i, 0, 50, 100, STANDING_POSITION);
+    leftSideUpDown(limitVal(j), 0b101);
+    rightSideUpDown(limitVal(j), 0b010);
+    //delay(1);
+  }
 }
 
 //void stillCalibrating() {
@@ -828,19 +1077,19 @@ void initialPosToStand() {
     rightSideFrontBack(50);
     //leftSideUpDown(i, 0b111);
     //rightSideUpDown(i, 0b111);
-	int8_t subtraction = 100 - i;
-	RightFrontHipServo::setPosition(100);
-	RightFrontKneeServo::setPosition(subtraction);
-	RightMiddleHipServo::setPosition(100);
-	RightMiddleKneeServo::setPosition(subtraction);
-	RightRearHipServo::setPosition(100);
-	RightRearKneeServo::setPosition(subtraction);
-	LeftFrontHipServo::setPosition(100);
-	LeftFrontKneeServo::setPosition(subtraction);
-	LeftMiddleHipServo::setPosition(100);
-	LeftMiddleKneeServo::setPosition(subtraction);
-	LeftRearHipServo::setPosition(100);
-	LeftRearKneeServo::setPosition(subtraction);
+    int8_t subtraction = 100 - i;
+    RightFrontHipServo::setPosition(100);
+    RightFrontKneeServo::setPosition(subtraction);
+    RightMiddleHipServo::setPosition(100);
+    RightMiddleKneeServo::setPosition(subtraction);
+    RightRearHipServo::setPosition(100);
+    RightRearKneeServo::setPosition(subtraction);
+    LeftFrontHipServo::setPosition(100);
+    LeftFrontKneeServo::setPosition(subtraction);
+    LeftMiddleHipServo::setPosition(100);
+    LeftMiddleKneeServo::setPosition(subtraction);
+    LeftRearHipServo::setPosition(100);
+    LeftRearKneeServo::setPosition(subtraction);
     delay(1);
   }
   for (int8_t i = 100; i >= 50; --i)
