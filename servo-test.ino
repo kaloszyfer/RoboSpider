@@ -305,18 +305,18 @@ double readBatteryVoltage() {
   return static_cast<double>(analogRead(A6)) * 8.4/1024;
 }
 
-// Uruchamia buzzer na jedno krótkie piknięcie
-void buzzOnce() {
-  buzzerOn();                        // włączam buzzer
-  delay(80);
-  buzzerOff();
-}
-
 // Uruchamia buzzer na dwa krótkie piknięcia
 void buzzTwice() {
   buzzOnce();
   delay(40);
   buzzOnce();
+}
+
+// Uruchamia buzzer na jedno krótkie piknięcie
+void buzzOnce() {
+  buzzerOn();                        // włączam buzzer
+  delay(80);
+  buzzerOff();
 }
 
 // Załącza buzzer
@@ -360,12 +360,17 @@ void loop() {
   if (!isActive) {
     return;
   }
+  pseudoThreadHandle();				// funkcja, którą należy wywoływać w każdej pętli
+  robotMovement_CheckState();
+}
+
+// Obsługa wielu zadań ("wątków")
+void pseudoThreadHandle() {
   readSerialData();
   readBluetoothData();
   checkIfBuzzerNeedsToGoOff();
   checkBatteryVoltageEveryTenSeconds();
   setLastCommandValue();
-  robotMovement_CheckState();
 }
 
 // Odczytuje dane z portu szeregowego (np. wiadomość "1example" zostanie przetworzona na wartość 1)
@@ -413,12 +418,12 @@ void checkBatteryState() {
     battState = BatteryLow;
     Serial.println("Warning. Low battery voltage level.");
     buzzerOn();
-    buzzerDuration = 500;
+    buzzerDuration = 300;
   }
   else if (batteryVoltage < BATTERY_MEDIUM) {
     Serial.println("Medium battery voltage level. It is advised to turn off the robot and start recharging.");
     buzzerOn();
-    buzzerDuration = 200;
+    buzzerDuration = 120;
   }
 }
 
@@ -631,78 +636,74 @@ void stillStand() {
   leftSideUpDown(STANDING_POSITION, 0b111);
   rightSideUpDown(STANDING_POSITION, 0b111);
 }
-// NA CHWILE WPROWADZONO DELAY(2)!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! pamietac, aby usunac
+
 void standToFront() {
-  for (int8_t i = 50; i < 75; ++i)  {
+  for (int8_t i = 50; i < 75; ++i) {
+    pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(i);
-  int8_t j = map(i, 50, 100, STANDING_POSITION, 100);
+    int8_t j = map(i, 50, 100, STANDING_POSITION, 100);
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
-    //delay(1);
   }
-  //delay(1);
   for (int8_t i = 75; i <= 100; ++i) {
+    pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(i);
-  int8_t j = map(i, 50, 100, 100, STANDING_POSITION);
+    int8_t j = map(i, 50, 100, 100, STANDING_POSITION);
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
-    //delay(1);
   }
   for (int8_t i = 100; i > 50; --i) {
+    pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(i);
     int8_t j = map(i, 100, 50, STANDING_POSITION, 100);
     leftSideUpDown(limitVal(j), 0b010);
     rightSideUpDown(limitVal(j), 0b101);
-    //delay(1);
   }
-  //delay(1);
   for (int8_t i = 50; i >= 0; --i) {
+    pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(i);
     int8_t j = map(i, 50, 0, 100, STANDING_POSITION);
     leftSideUpDown(limitVal(j), 0b010);
     rightSideUpDown(limitVal(j), 0b101);
-    //delay(1);
   }
 }
 
 void standToBack() {
   for (int8_t i = 50; i > 25; --i) {
+    pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(i);
     int8_t j = map(i, 50, 0, STANDING_POSITION, 100);
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
-    //delay(1);
   }
-  //delay(1);
   for (int8_t i = 25; i >= 0; --i) {
+    pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(i);
     int8_t j = map(i, 50, 0, 100, STANDING_POSITION);
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
-    //delay(1);
   }
   for (int8_t i = 0; i < 50; ++i) {
+    pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(i);
     int8_t j = map(i, 0, 50, STANDING_POSITION, 100);
     leftSideUpDown(limitVal(j), 0b010);
     rightSideUpDown(limitVal(j), 0b101);
-    //delay(1);
   }
-  //delay(1);
   for (int8_t i = 50; i <= 100; ++i) {
+    pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(i);
     int8_t j = map(i, 50, 100, 100, STANDING_POSITION);
     leftSideUpDown(limitVal(j), 0b010);
     rightSideUpDown(limitVal(j), 0b101);
-    //delay(1);
   }
 }
 
@@ -716,75 +717,71 @@ void standToRight() {
 
 void standToTurnLeft() {
   for (int8_t i = 50; i < 75; ++i) {
+    pseudoThreadHandle();
     leftSideFrontBack(100 - i);
     rightSideFrontBack(i);
     int8_t j = map(i, 50, 100, STANDING_POSITION, 100);
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
-    //delay(1);
   }
-  //delay(1);
   for (int8_t i = 75; i <= 100; ++i) {
+    pseudoThreadHandle();
     leftSideFrontBack(100 - i);
     rightSideFrontBack(i);
     int8_t j = map(i, 50, 100, 100, STANDING_POSITION);
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
-    //delay(1);
   }
   for (int8_t i = 100; i > 50; --i) {
+    pseudoThreadHandle();
     leftSideFrontBack(100 - i);
     rightSideFrontBack(i);
     int8_t j = map(i, 100, 50, STANDING_POSITION, 100);
     leftSideUpDown(limitVal(j), 0b010);
     rightSideUpDown(limitVal(j), 0b101);
-    //delay(1);
   }
-  //delay(1);
   for (int8_t i = 50; i >= 0; --i) {
+    pseudoThreadHandle();
     leftSideFrontBack(100 - i);
     rightSideFrontBack(i);
     int8_t j = map(i, 50, 0, 100, STANDING_POSITION);
     leftSideUpDown(limitVal(j), 0b010);
     rightSideUpDown(limitVal(j), 0b101);
-    //delay(1);
   }
 }
 
 void standToTurnRight() {
   for (int8_t i = 50; i < 75; ++i) {
+    pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(100 - i);
     int8_t j = map(i, 50, 100, STANDING_POSITION, 100);
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
-    //delay(1);
   }
-  //delay(1);
   for (int8_t i = 75; i <= 100; ++i) {
+    pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(100 - i);
     int8_t j = map(i, 50, 100, 100, STANDING_POSITION);
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
-    //delay(1);
   }
   for (int8_t i = 100; i > 50; --i) {
+    pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(100 - i);
     int8_t j = map(i, 100, 50, STANDING_POSITION, 100);
     leftSideUpDown(limitVal(j), 0b010);
     rightSideUpDown(limitVal(j), 0b101);
-    //delay(1);
   }
-  //delay(1);
   for (int8_t i = 50; i >= 0; --i) {
+    pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(100 - i);
     int8_t j = map(i, 50, 0, 100, STANDING_POSITION);
     leftSideUpDown(limitVal(j), 0b010);
     rightSideUpDown(limitVal(j), 0b101);
-    //delay(1);
   }
 }
 
@@ -797,134 +794,127 @@ void standToTurnRight() {
 //}
 
 void standToInitialPos() {
-  for (int8_t i = 50; i <= 100; ++i)
-  {
+  for (int8_t i = 50; i <= 100; ++i) {
+    pseudoThreadHandle(); // to może tutaj niekoniecznie... ale póki co niech zostanie
     leftSideFrontBack(50);
     rightSideFrontBack(50);
-  int8_t j = map(i, 50, 100, STANDING_POSITION, 100);
+    int8_t j = map(i, 50, 100, STANDING_POSITION, 100);
     leftSideUpDown(j, 0b111);
     rightSideUpDown(j, 0b111);
-    //delay(1);
   }
 }
 
 void stillFront() {
   for (int8_t i = 0; i < 50; ++i) {
+    pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(i);
     //int8_t j = /*map(i, 0, 50, 50, 100)*/i + 50;
-  int8_t j = map(i, 0, 50, STANDING_POSITION, 100);
+    int8_t j = map(i, 0, 50, STANDING_POSITION, 100);
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
-    //delay(1);
   }
-  //delay(1);
   for (int8_t i = 50; i <= 100; ++i) {
+    pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(i);
     //int8_t j = /*map(i, 50, 100, 100, 50)*/150 - i;
-  int8_t j = map(i, 50, 100, 100, STANDING_POSITION);
+    int8_t j = map(i, 50, 100, 100, STANDING_POSITION);
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
-    //delay(1);
   }
   for (int8_t i = 100; i > 50; --i) {
+    pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(i);
     //int8_t j = /*map(i, 100, 50, 50, 100)*/150 - i;
-  int8_t j = map(i, 100, 50, STANDING_POSITION, 100);
+    int8_t j = map(i, 100, 50, STANDING_POSITION, 100);
     leftSideUpDown(limitVal(j), 0b010);
     rightSideUpDown(limitVal(j), 0b101);
-    //delay(1);
   }
-  //delay(1);
   for (int8_t i = 50; i >= 0; --i) {
+    pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(i);
     //int8_t j = /*map(i, 50, 0, 100, 50)*/i + 50;
-  int8_t j = map(i, 50, 0, 100, STANDING_POSITION);
+    int8_t j = map(i, 50, 0, 100, STANDING_POSITION);
     leftSideUpDown(limitVal(j), 0b010);
     rightSideUpDown(limitVal(j), 0b101);
-    //delay(1);
   }
 }
 
 void frontToStand() {
   for (int8_t i = 0; i < 25; ++i) {
+    pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(i);
-  //int8_t j = /*map(i, 0, 25, 50, 75)*/i + 50;
-  int8_t j = map(i, 0, 50, STANDING_POSITION, 100);
+    //int8_t j = /*map(i, 0, 25, 50, 75)*/i + 50;
+    int8_t j = map(i, 0, 50, STANDING_POSITION, 100);
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
-    //delay(1);
   }
-  //delay(1);
   for (int8_t i = 25; i <= 50; ++i) {
+    pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(i);
     //int8_t j = /*map(i, 25, 50, 75, 50)*/100 - i;
-  int8_t j = map(i, 0, 50, 100, STANDING_POSITION);
+    int8_t j = map(i, 0, 50, 100, STANDING_POSITION);
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
-    //delay(1);
   }
 }
 
 void stillBack() {
   for (int8_t i = 100; i > 50; --i) {
+    pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(i);
     int8_t j = map(i, 100, 50, STANDING_POSITION, 100);
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
-    //delay(1);
   }
-  //delay(1);
   for (int8_t i = 50; i >= 0; --i) {
+    pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(i);
     int8_t j = map(i, 50, 0, 100, STANDING_POSITION);
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
-    //delay(1);
   }
   for (int8_t i = 0; i < 50; ++i) {
+    pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(i);
     int8_t j = map(i, 0, 50, STANDING_POSITION, 100);
     leftSideUpDown(limitVal(j), 0b010);
     rightSideUpDown(limitVal(j), 0b101);
-    //delay(1);
   }
-  //delay(1);
   for (int8_t i = 50; i <= 100; ++i) {
+    pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(i);
     int8_t j = map(i, 50, 100, 100, STANDING_POSITION);
     leftSideUpDown(limitVal(j), 0b010);
     rightSideUpDown(limitVal(j), 0b101);
-    //delay(1);
   }
 }
 
 void backToStand() {
   for (int8_t i = 100; i > 75; --i) {
+    pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(i);
     int8_t j = map(i, 100, 50, STANDING_POSITION, 100);
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
-    //delay(1);
   }
-  //delay(1);
   for (int8_t i = 75; i >= 50; --i) {
+    pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(i);
     int8_t j = map(i, 100, 50, 100, STANDING_POSITION);
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
-    //delay(1);
   }
 }
 
@@ -946,115 +936,109 @@ void rightToStand() {
 
 void stillTurningLeft() {
   for (int8_t i = 0; i < 50; ++i) {
+    pseudoThreadHandle();
     leftSideFrontBack(100 - i);
     rightSideFrontBack(i);
     int8_t j = map(i, 0, 50, STANDING_POSITION, 100);
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
-    //delay(1);
   }
-  //delay(1);
   for (int8_t i = 50; i <= 100; ++i) {
+    pseudoThreadHandle();
     leftSideFrontBack(100 - i);
     rightSideFrontBack(i);
     int8_t j = map(i, 50, 100, 100, STANDING_POSITION);
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
-    //delay(1);
   }
   for (int8_t i = 100; i > 50; --i) {
+    pseudoThreadHandle();
     leftSideFrontBack(100 - i);
     rightSideFrontBack(i);
     int8_t j = map(i, 100, 50, STANDING_POSITION, 100);
     leftSideUpDown(limitVal(j), 0b010);
     rightSideUpDown(limitVal(j), 0b101);
-    //delay(1);
   }
-  //delay(1);
   for (int8_t i = 50; i >= 0; --i) {
+    pseudoThreadHandle();
     leftSideFrontBack(100 - i);
     rightSideFrontBack(i);
     int8_t j = map(i, 50, 0, 100, STANDING_POSITION);
     leftSideUpDown(limitVal(j), 0b010);
     rightSideUpDown(limitVal(j), 0b101);
-    //delay(1);
   }
 }
 
 void turningLeftToStand() {
   for (int8_t i = 0; i < 25; ++i) {
+    pseudoThreadHandle();
     leftSideFrontBack(100 - i);
     rightSideFrontBack(i);
     int8_t j = map(i, 0, 50, STANDING_POSITION, 100);
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
-    //delay(1);
   }
-  //delay(1);
   for (int8_t i = 25; i <= 50; ++i) {
+    pseudoThreadHandle();
     leftSideFrontBack(100 - i);
     rightSideFrontBack(i);
     int8_t j = map(i, 0, 50, 100, STANDING_POSITION);
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
-    //delay(1);
   }
 }
 
 void stillTurningRight() {
   for (int8_t i = 0; i < 50; ++i) {
+    pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(100 - i);
     int8_t j = map(i, 0, 50, STANDING_POSITION, 100);
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
-    //delay(1);
   }
-  //delay(1);
   for (int8_t i = 50; i <= 100; ++i) {
+    pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(100 - i);
     int8_t j = map(i, 50, 100, 100, STANDING_POSITION);
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
-    //delay(1);
   }
   for (int8_t i = 100; i > 50; --i) {
+    pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(100 - i);
     int8_t j = map(i, 100, 50, STANDING_POSITION, 100);
     leftSideUpDown(limitVal(j), 0b010);
     rightSideUpDown(limitVal(j), 0b101);
-    //delay(1);
   }
-  //delay(1);
   for (int8_t i = 50; i >= 0; --i) {
+    pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(100 - i);
     int8_t j = map(i, 50, 0, 100, STANDING_POSITION);
     leftSideUpDown(limitVal(j), 0b010);
     rightSideUpDown(limitVal(j), 0b101);
-    //delay(1);
   }
 }
 
 void turningRightToStand() {
   for (int8_t i = 0; i < 25; ++i) {
+    pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(100 - i);
     int8_t j = map(i, 0, 50, STANDING_POSITION, 100);
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
-    //delay(1);
   }
-  //delay(1);
   for (int8_t i = 25; i <= 50; ++i) {
+    pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(100 - i);
     int8_t j = map(i, 0, 50, 100, STANDING_POSITION);
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
-    //delay(1);
   }
 }
 
@@ -1071,8 +1055,8 @@ void turningRightToStand() {
 //}
 
 void initialPosToStand() {
-  for (int8_t i = 100; i >= 50; --i)
-  {
+  for (int8_t i = 100; i >= 50; --i) {
+    pseudoThreadHandle(); // obsługa wątku niekoniecznie jest tu potrzebna, ale niech zostanie póki co
     leftSideFrontBack(50);
     rightSideFrontBack(50);
     //leftSideUpDown(i, 0b111);
@@ -1090,10 +1074,10 @@ void initialPosToStand() {
     LeftMiddleKneeServo::setPosition(subtraction);
     LeftRearHipServo::setPosition(100);
     LeftRearKneeServo::setPosition(subtraction);
-    delay(1);
+    //delay(1);
   }
-  for (int8_t i = 100; i >= 50; --i)
-  {
+  for (int8_t i = 100; i >= 50; --i) {
+    pseudoThreadHandle(); // tutaj podobnie
     leftSideFrontBack(50);
     rightSideFrontBack(50);
     RightFrontHipServo::setPosition(i);
@@ -1108,22 +1092,22 @@ void initialPosToStand() {
     LeftMiddleKneeServo::setPosition(50);
     LeftRearHipServo::setPosition(i);
     LeftRearKneeServo::setPosition(50);
-    delay(1);
+    //delay(1);
   }
-  for (int8_t i = 49; i >= STANDING_POSITION; --i)
-  {
+  for (int8_t i = 49; i >= STANDING_POSITION; --i) {
+    pseudoThreadHandle();
     leftSideFrontBack(50);
     rightSideFrontBack(50);
     leftSideUpDown(i, 0b111);
     rightSideUpDown(i, 0b111);
-    delay(1);
+    //delay(1);
   }
 }
 
 // Zwraca wartość z przedziału od 0 do 100 przeskalowaną do wartości z przedziału od 0 do newMax
-int8_t mMap(int8_t value, int8_t newMax) {
-  return map(value, 0, 100, 0, newMax);
-}
+//int8_t mMap(int8_t value, int8_t newMax) {
+//  return map(value, 0, 100, 0, newMax);
+//}
 
 // Zwraca wartość parametru value nie większą niż domyślny parametr limitu (DEFAULT_VALUE_LIMIT)
 int8_t limitVal(int8_t value) {
