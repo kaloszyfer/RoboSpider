@@ -54,6 +54,9 @@
 //buzzer
 #define BUZZER_PIN 12
 // ------------------------------------------------------
+//prędkość
+#define STEP 2
+// ------------------------------------------------------
 
 enum RobotState   // stany robota
 {
@@ -102,7 +105,7 @@ RobotCommand lastCommand = Stand;
 unsigned long timeNow = 0;
 unsigned long timeSaved = 0;
 
-String receivedData;          // zmienna na dane odbierane przez Bluetooth
+char receivedData;          // zmienna na dane odbierane przez Bluetooth
 
 unsigned long buzzerDuration = 0;
 
@@ -276,7 +279,7 @@ struct LeftRearKneeServo
 
 
 void setup() {
-  Serial.begin(9600);                     // inicjalizacja portu szeregowego
+  Serial.begin(/*9600*/115200);                     // inicjalizacja portu szeregowego
   Serial.println("Hello, RoboSpider here! I'm initialising now...");
   pinMode(BUZZER_PIN, OUTPUT);            // buzzer
   if (!isBatteryVoltageOkay()) {                // jeśli napięcie baterii nieprawidłowe
@@ -342,7 +345,6 @@ bool isBuzzerTurnedOn() {
 void servoInit() {
   servos.begin();                                               // inicjalizacja sterownika PWM
   servos.setPWMFreq(60);                                        // analogowe serwa działają na około 60Hz
-// PRZYDAŁOBY SIĘ JESZCZE ZROBIĆ COŚ Z DZIWNYM RUCHEM SERW NA POCZĄTKU
   delay(320);
   servoLeft.attach(SERVO_LEFT_FRONT0NUM);                       // inicjalizacja lewego serwa, podłączonego bezpośrednio do arduino
   delay(20);
@@ -373,21 +375,37 @@ void pseudoThreadHandle() {
   setLastCommandValue();
 }
 
-// Odczytuje dane z portu szeregowego (np. wiadomość "1example" zostanie przetworzona na wartość 1)
+// Odczytuje bajt po bajcie z portu szeregowego (np. wiadomość "1\n\r" zostanie przetworzona na wartość 1)
 void readSerialData() {
   if (Serial.available()) {
-    String data;                        // tworzę pustą zmienną na dane
-    data += Serial.readString().charAt(0);            // odczytuję serię danych z portu szeregowego, a pierwszy znak dopisuję do zmiennej
-    receivedData = "";                      // zeruję globalną zmienną na dane
-    receivedData += static_cast<char>(data.toInt());            // zamieniam dane zawierające jeden znak na integer, rzutuję na char i dopisuję do zmiennej globalnej
-    Serial.println("I got some data from serial port!");
+    char dataChar = Serial.read();                        // odczytuję pierwszy dostępny bajt (przy okazji następuje jego zwolnienie z bufora)
+    if ((dataChar != '\n') && (dataChar != '\r')) {       // jeśli odczytany bajt nie jest znakiem nowej linii ani karetką
+      String data;                                        // tworzę pustą zmienną na dane
+      data += dataChar;                                   // dodaję odczytany znak
+      int dataInt = data.toInt();                         // i zamieniam na integer
+      if ((dataInt >= RobotCommand::Stand) && (dataInt <= RobotCommand::GoToInitialPos)) { // sprawdzam czy wartość znaku mieści się w przedziale enumeratora RobotCommand
+        //receivedData = "";                                // zeruję globalną zmienną na dane
+        //receivedData += static_cast<char>(dataInt);       // znak zamieniony na integer, rzutuję na char i dopisuję do zmiennej globalnej
+        receivedData = static_cast<char>(dataInt);        // znak zamieniony na integer, rzutuję na char i dopisuję do zmiennej globalnej
+        Serial.println("I got some data from serial port!");
+      }
+    }
   }
 }
 
 // Odczytuje dane z modułu Bluetooth
 void readBluetoothData() {
   if (btSerial.available()) {
-    receivedData = btSerial.readString();   // zapis serii odebranych bajtów do zmiennej
+    char dataChar = btSerial.read();                      // odczytuję pierwszy dostępny bajt (przy okazji następuje jego zwolnienie z bufora)
+    if ((dataChar != '\n') && (dataChar != '\r')) {       // jeśli odczytany bajt nie jest znakiem nowej linii ani karetką
+      int dataInt = static_cast<int>(dataChar);           // rzutuję na integer
+      if ((dataInt >= RobotCommand::Stand) && (dataInt <= RobotCommand::GoToInitialPos)) { // sprawdzam czy wartość znaku mieści się w przedziale enumeratora RobotCommand
+        //receivedData = "";                                // zeruję globalną zmienną na dane
+        //receivedData += static_cast<char>(dataInt);       // znak zamieniony na integer, rzutuję na char i dopisuję do zmiennej globalnej
+        receivedData = dataChar;                          // zapisuję do zmiennej globalnej
+      }
+    }
+    //receivedData = btSerial.readString();   // zapis serii odebranych bajtów do zmiennej
   }
 }
 
@@ -430,9 +448,11 @@ void checkBatteryState() {
 // Przypisuje ostatnio odebraną komendę do zmiennej
 void setLastCommandValue() {
   if ((state != Inactive) && (battState != BatteryLow)) {
-    if (receivedData.length()) {                    // jeśli jakiekolwiek dane odebrane
-      lastCommand = static_cast<RobotCommand>(receivedData.charAt(0));  // zrzutowanie pierwszego bajtu ostatnio odebranej serii na enum komendy robota
-    }
+    //if (receivedData.length()) {                    // jeśli jakiekolwiek dane odebrane
+      //lastCommand = static_cast<RobotCommand>(receivedData.charAt(0));  // zrzutowanie pierwszego bajtu ostatnio odebranej serii na enum komendy robota
+      lastCommand = static_cast<RobotCommand>(receivedData);            // zrzutowanie pierwszego bajtu ostatnio odebranej serii na enum komendy robota
+      //receivedData = "";
+    //}
   }
   else {
     if (lastCommand != GoToInitialPos) {
@@ -638,7 +658,7 @@ void stillStand() {
 }
 
 void standToFront() {
-  for (int8_t i = 50; i < 75; ++i) {
+  for (int8_t i = 50; i < 75; i += STEP) {
     pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(i);
@@ -646,7 +666,7 @@ void standToFront() {
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
   }
-  for (int8_t i = 75; i <= 100; ++i) {
+  for (int8_t i = 75; i <= 100; i += STEP) {
     pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(i);
@@ -654,7 +674,7 @@ void standToFront() {
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
   }
-  for (int8_t i = 100; i > 50; --i) {
+  for (int8_t i = 100; i > 50; i -= STEP) {
     pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(i);
@@ -662,7 +682,7 @@ void standToFront() {
     leftSideUpDown(limitVal(j), 0b010);
     rightSideUpDown(limitVal(j), 0b101);
   }
-  for (int8_t i = 50; i >= 0; --i) {
+  for (int8_t i = 50; i >= 0; i -= STEP) {
     pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(i);
@@ -673,7 +693,7 @@ void standToFront() {
 }
 
 void standToBack() {
-  for (int8_t i = 50; i > 25; --i) {
+  for (int8_t i = 50; i > 25; i -= STEP) {
     pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(i);
@@ -681,7 +701,7 @@ void standToBack() {
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
   }
-  for (int8_t i = 25; i >= 0; --i) {
+  for (int8_t i = 25; i >= 0; i -= STEP) {
     pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(i);
@@ -689,7 +709,7 @@ void standToBack() {
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
   }
-  for (int8_t i = 0; i < 50; ++i) {
+  for (int8_t i = 0; i < 50; i += STEP) {
     pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(i);
@@ -697,7 +717,7 @@ void standToBack() {
     leftSideUpDown(limitVal(j), 0b010);
     rightSideUpDown(limitVal(j), 0b101);
   }
-  for (int8_t i = 50; i <= 100; ++i) {
+  for (int8_t i = 50; i <= 100; i += STEP) {
     pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(i);
@@ -716,7 +736,7 @@ void standToRight() {
 }
 
 void standToTurnLeft() {
-  for (int8_t i = 50; i < 75; ++i) {
+  for (int8_t i = 50; i < 75; i += STEP) {
     pseudoThreadHandle();
     leftSideFrontBack(100 - i);
     rightSideFrontBack(i);
@@ -724,7 +744,7 @@ void standToTurnLeft() {
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
   }
-  for (int8_t i = 75; i <= 100; ++i) {
+  for (int8_t i = 75; i <= 100; i += STEP) {
     pseudoThreadHandle();
     leftSideFrontBack(100 - i);
     rightSideFrontBack(i);
@@ -732,7 +752,7 @@ void standToTurnLeft() {
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
   }
-  for (int8_t i = 100; i > 50; --i) {
+  for (int8_t i = 100; i > 50; i -= STEP) {
     pseudoThreadHandle();
     leftSideFrontBack(100 - i);
     rightSideFrontBack(i);
@@ -740,7 +760,7 @@ void standToTurnLeft() {
     leftSideUpDown(limitVal(j), 0b010);
     rightSideUpDown(limitVal(j), 0b101);
   }
-  for (int8_t i = 50; i >= 0; --i) {
+  for (int8_t i = 50; i >= 0; i -= STEP) {
     pseudoThreadHandle();
     leftSideFrontBack(100 - i);
     rightSideFrontBack(i);
@@ -751,7 +771,7 @@ void standToTurnLeft() {
 }
 
 void standToTurnRight() {
-  for (int8_t i = 50; i < 75; ++i) {
+  for (int8_t i = 50; i < 75; i += STEP) {
     pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(100 - i);
@@ -759,7 +779,7 @@ void standToTurnRight() {
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
   }
-  for (int8_t i = 75; i <= 100; ++i) {
+  for (int8_t i = 75; i <= 100; i += STEP) {
     pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(100 - i);
@@ -767,7 +787,7 @@ void standToTurnRight() {
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
   }
-  for (int8_t i = 100; i > 50; --i) {
+  for (int8_t i = 100; i > 50; i -= STEP) {
     pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(100 - i);
@@ -775,7 +795,7 @@ void standToTurnRight() {
     leftSideUpDown(limitVal(j), 0b010);
     rightSideUpDown(limitVal(j), 0b101);
   }
-  for (int8_t i = 50; i >= 0; --i) {
+  for (int8_t i = 50; i >= 0; i -= STEP) {
     pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(100 - i);
@@ -788,14 +808,14 @@ void standToTurnRight() {
 //void standToCalibrate() {
 //  servoRight.write(map(SERVOMID, SERVOMIN, SERVOMAX, 120, 60));
 //  servoLeft.write(map(SERVOMID, SERVOMIN, SERVOMAX, 60, 120));
-//  for (int8_t i = 0; i < 16; ++i) {
+//  for (int8_t i = 0; i < 16; i += STEP) {
 //    servos.setPWM(i, 0, SERVOMID);
 //  }
 //}
 
 void standToInitialPos() {
-  for (int8_t i = 50; i <= 100; ++i) {
-    pseudoThreadHandle(); // to może tutaj niekoniecznie... ale póki co niech zostanie
+  for (int8_t i = 50; i <= 100; i += /*STEP*/1) {
+    //pseudoThreadHandle(); // to może tutaj niekoniecznie... ale póki co niech zostanie
     leftSideFrontBack(50);
     rightSideFrontBack(50);
     int8_t j = map(i, 50, 100, STANDING_POSITION, 100);
@@ -805,7 +825,7 @@ void standToInitialPos() {
 }
 
 void stillFront() {
-  for (int8_t i = 0; i < 50; ++i) {
+  for (int8_t i = 0; i < 50; i += STEP) {
     pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(i);
@@ -814,7 +834,7 @@ void stillFront() {
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
   }
-  for (int8_t i = 50; i <= 100; ++i) {
+  for (int8_t i = 50; i <= 100; i += STEP) {
     pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(i);
@@ -823,7 +843,7 @@ void stillFront() {
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
   }
-  for (int8_t i = 100; i > 50; --i) {
+  for (int8_t i = 100; i > 50; i -= STEP) {
     pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(i);
@@ -832,7 +852,7 @@ void stillFront() {
     leftSideUpDown(limitVal(j), 0b010);
     rightSideUpDown(limitVal(j), 0b101);
   }
-  for (int8_t i = 50; i >= 0; --i) {
+  for (int8_t i = 50; i >= 0; i -= STEP) {
     pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(i);
@@ -844,7 +864,7 @@ void stillFront() {
 }
 
 void frontToStand() {
-  for (int8_t i = 0; i < 25; ++i) {
+  for (int8_t i = 0; i < 25; i += STEP) {
     pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(i);
@@ -853,7 +873,7 @@ void frontToStand() {
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
   }
-  for (int8_t i = 25; i <= 50; ++i) {
+  for (int8_t i = 25; i <= 50; i += STEP) {
     pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(i);
@@ -865,7 +885,7 @@ void frontToStand() {
 }
 
 void stillBack() {
-  for (int8_t i = 100; i > 50; --i) {
+  for (int8_t i = 100; i > 50; i -= STEP) {
     pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(i);
@@ -873,7 +893,7 @@ void stillBack() {
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
   }
-  for (int8_t i = 50; i >= 0; --i) {
+  for (int8_t i = 50; i >= 0; i -= STEP) {
     pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(i);
@@ -881,7 +901,7 @@ void stillBack() {
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
   }
-  for (int8_t i = 0; i < 50; ++i) {
+  for (int8_t i = 0; i < 50; i += STEP) {
     pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(i);
@@ -889,7 +909,7 @@ void stillBack() {
     leftSideUpDown(limitVal(j), 0b010);
     rightSideUpDown(limitVal(j), 0b101);
   }
-  for (int8_t i = 50; i <= 100; ++i) {
+  for (int8_t i = 50; i <= 100; i += STEP) {
     pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(i);
@@ -900,7 +920,7 @@ void stillBack() {
 }
 
 void backToStand() {
-  for (int8_t i = 100; i > 75; --i) {
+  for (int8_t i = 100; i > 75; i -= STEP) {
     pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(i);
@@ -908,7 +928,7 @@ void backToStand() {
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
   }
-  for (int8_t i = 75; i >= 50; --i) {
+  for (int8_t i = 75; i >= 50; i -= STEP) {
     pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(i);
@@ -935,7 +955,7 @@ void rightToStand() {
 }
 
 void stillTurningLeft() {
-  for (int8_t i = 0; i < 50; ++i) {
+  for (int8_t i = 0; i < 50; i += STEP) {
     pseudoThreadHandle();
     leftSideFrontBack(100 - i);
     rightSideFrontBack(i);
@@ -943,7 +963,7 @@ void stillTurningLeft() {
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
   }
-  for (int8_t i = 50; i <= 100; ++i) {
+  for (int8_t i = 50; i <= 100; i += STEP) {
     pseudoThreadHandle();
     leftSideFrontBack(100 - i);
     rightSideFrontBack(i);
@@ -951,7 +971,7 @@ void stillTurningLeft() {
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
   }
-  for (int8_t i = 100; i > 50; --i) {
+  for (int8_t i = 100; i > 50; i -= STEP) {
     pseudoThreadHandle();
     leftSideFrontBack(100 - i);
     rightSideFrontBack(i);
@@ -959,7 +979,7 @@ void stillTurningLeft() {
     leftSideUpDown(limitVal(j), 0b010);
     rightSideUpDown(limitVal(j), 0b101);
   }
-  for (int8_t i = 50; i >= 0; --i) {
+  for (int8_t i = 50; i >= 0; i -= STEP) {
     pseudoThreadHandle();
     leftSideFrontBack(100 - i);
     rightSideFrontBack(i);
@@ -970,7 +990,7 @@ void stillTurningLeft() {
 }
 
 void turningLeftToStand() {
-  for (int8_t i = 0; i < 25; ++i) {
+  for (int8_t i = 0; i < 25; i += STEP) {
     pseudoThreadHandle();
     leftSideFrontBack(100 - i);
     rightSideFrontBack(i);
@@ -978,7 +998,7 @@ void turningLeftToStand() {
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
   }
-  for (int8_t i = 25; i <= 50; ++i) {
+  for (int8_t i = 25; i <= 50; i += STEP) {
     pseudoThreadHandle();
     leftSideFrontBack(100 - i);
     rightSideFrontBack(i);
@@ -989,7 +1009,7 @@ void turningLeftToStand() {
 }
 
 void stillTurningRight() {
-  for (int8_t i = 0; i < 50; ++i) {
+  for (int8_t i = 0; i < 50; i += STEP) {
     pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(100 - i);
@@ -997,7 +1017,7 @@ void stillTurningRight() {
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
   }
-  for (int8_t i = 50; i <= 100; ++i) {
+  for (int8_t i = 50; i <= 100; i += STEP) {
     pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(100 - i);
@@ -1005,7 +1025,7 @@ void stillTurningRight() {
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
   }
-  for (int8_t i = 100; i > 50; --i) {
+  for (int8_t i = 100; i > 50; i -= STEP) {
     pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(100 - i);
@@ -1013,7 +1033,7 @@ void stillTurningRight() {
     leftSideUpDown(limitVal(j), 0b010);
     rightSideUpDown(limitVal(j), 0b101);
   }
-  for (int8_t i = 50; i >= 0; --i) {
+  for (int8_t i = 50; i >= 0; i -= STEP) {
     pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(100 - i);
@@ -1024,7 +1044,7 @@ void stillTurningRight() {
 }
 
 void turningRightToStand() {
-  for (int8_t i = 0; i < 25; ++i) {
+  for (int8_t i = 0; i < 25; i += STEP) {
     pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(100 - i);
@@ -1032,7 +1052,7 @@ void turningRightToStand() {
     leftSideUpDown(limitVal(j), 0b101);
     rightSideUpDown(limitVal(j), 0b010);
   }
-  for (int8_t i = 25; i <= 50; ++i) {
+  for (int8_t i = 25; i <= 50; i += STEP) {
     pseudoThreadHandle();
     leftSideFrontBack(i);
     rightSideFrontBack(100 - i);
@@ -1045,7 +1065,7 @@ void turningRightToStand() {
 //void stillCalibrating() {
 //  servoRight.write(map(SERVOMID, SERVOMIN, SERVOMAX, 120, 60));
 //  servoLeft.write(map(SERVOMID, SERVOMIN, SERVOMAX, 60, 120));
-//  for (int8_t i = 0; i < 16; ++i) {
+//  for (int8_t i = 0; i < 16; i += STEP) {
 //    servos.setPWM(i, 0, SERVOMID);
 //  }
 //}
@@ -1055,7 +1075,7 @@ void turningRightToStand() {
 //}
 
 void initialPosToStand() {
-  for (int8_t i = 100; i >= 50; --i) {
+  for (int8_t i = 100; i >= 50; i -= /*STEP*/1) {
     pseudoThreadHandle(); // obsługa wątku niekoniecznie jest tu potrzebna, ale niech zostanie póki co
     leftSideFrontBack(50);
     rightSideFrontBack(50);
@@ -1074,9 +1094,8 @@ void initialPosToStand() {
     LeftMiddleKneeServo::setPosition(subtraction);
     LeftRearHipServo::setPosition(100);
     LeftRearKneeServo::setPosition(subtraction);
-    //delay(1);
   }
-  for (int8_t i = 100; i >= 50; --i) {
+  for (int8_t i = 100; i >= 50; i -= /*STEP*/1) {
     pseudoThreadHandle(); // tutaj podobnie
     leftSideFrontBack(50);
     rightSideFrontBack(50);
@@ -1092,15 +1111,13 @@ void initialPosToStand() {
     LeftMiddleKneeServo::setPosition(50);
     LeftRearHipServo::setPosition(i);
     LeftRearKneeServo::setPosition(50);
-    //delay(1);
   }
-  for (int8_t i = 49; i >= STANDING_POSITION; --i) {
+  for (int8_t i = 49; i >= STANDING_POSITION; i -= /*STEP*/1) {
     pseudoThreadHandle();
     leftSideFrontBack(50);
     rightSideFrontBack(50);
     leftSideUpDown(i, 0b111);
     rightSideUpDown(i, 0b111);
-    //delay(1);
   }
 }
 
