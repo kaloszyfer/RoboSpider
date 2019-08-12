@@ -30,9 +30,9 @@
 #define SERVO_LEFT_FRONT1NUM   9
 #define SERVO_LEFT_FRONT2NUM   8
 //minimalne i maksymalne długości impulsu
-#define SERVOMIN  150 // minimalna długość impulsu (z 4096)
-#define SERVOMAX  600 // minimalna długość impulsu (z 4096)
-#define SERVOMID  375 //(SERVOMAX+SERVOMIN)/2 // wartość wyśrodkowana
+//#define SERVOMIN  150 // minimalna długość impulsu (z 4096)
+//#define SERVOMAX  600 // minimalna długość impulsu (z 4096)
+//#define SERVOMID  375 //(SERVOMAX+SERVOMIN)/2 // wartość wyśrodkowana
 // 450pul. - 180st. -> Xpul. - 62st. -> X = 155pul. (62st.) // a 60st. to 150pul.
 #define SERVOMIN_0 /*220*//*225*//*300*//*325*/340 // wg pomiarów - 62st. od pozycji środkowej (150+225-155 = 220) // zakres 28st. -> 90 - 14 = 76st.
 #define SERVOMAX_0 /*530*//*525*//*450*//*425*/410 // wg pomiarów - 62st. od pozycji środkowej (600-225+155 = 530) // zakres 28st. -> 90 + 14 = 104st.
@@ -46,10 +46,10 @@
 #define BATTERY_MEDIUM 7.11
 // ------------------------------------------------------
 //domyślna wartość ograniczenia (dla funkcji limitVal(value, limit))
-#define DEFAULT_VALUE_LIMIT 73
+#define DEFAULT_VALUE_LIMIT /*73*/82
 // ------------------------------------------------------
 //pozycja kolan i bioder, przy której robot jest w pozycji stojącej (nie może być większe niż 49)
-#define STANDING_POSITION 38
+#define STANDING_POSITION /*38*/45
 // ------------------------------------------------------
 //buzzer
 #define BUZZER_PIN 12
