@@ -57,6 +57,10 @@
 //prędkość
 #define STEP 2
 // ------------------------------------------------------
+//port szeregowy
+#define SERIAL_TIMEOUT 600 //czas oczekiwania na komendę
+#define SERIAL_TIMEOUT_CRITICAL 120000 //ostateczny czas oczekiwania na komendę
+// ------------------------------------------------------
 
 enum RobotState   // stany robota
 {
@@ -102,9 +106,10 @@ RobotState state = Initialising;
 BatteryState battState = BatteryOK;
 RobotCommand lastCommand = Stand;
 
-unsigned long timeNow = 0;
-unsigned long timeSaved = 0;
+unsigned long timeNow = 0;			// zmienna, do której przypisywany jest licznik czasu działania programu
+unsigned long timeBatteryCheck = 0;	// zapis czasu na zdarzenie sprawdzenia baterii
 
+unsigned long timeDataReceive = 0;	// zapis czasu na zdarzenie otrzymania danych
 char receivedData;          // zmienna na dane odbierane przez Bluetooth
 
 unsigned long buzzerDuration = 0;
@@ -279,7 +284,7 @@ struct LeftRearKneeServo
 
 
 void setup() {
-  Serial.begin(/*9600*/115200);                     // inicjalizacja portu szeregowego
+  Serial.begin(9600/*115200*/);                     // inicjalizacja portu szeregowego
   Serial.println("Hello, RoboSpider here! I'm initialising now...");
   pinMode(BUZZER_PIN, OUTPUT);            // buzzer
   if (!isBatteryVoltageOkay()) {                // jeśli napięcie baterii nieprawidłowe
@@ -368,8 +373,10 @@ void loop() {
 
 // Obsługa wielu zadań ("wątków")
 void pseudoThreadHandle() {
+  timeNow = millis();
   readSerialData();
   readBluetoothData();
+  checkDataReceiveTimeout();
   checkIfBuzzerNeedsToGoOff();
   checkBatteryVoltageEveryTenSeconds();
   setLastCommandValue();
@@ -384,9 +391,8 @@ void readSerialData() {
       data += dataChar;                                   // dodaję odczytany znak
       int dataInt = data.toInt();                         // i zamieniam na integer
       if ((dataInt >= RobotCommand::Stand) && (dataInt <= RobotCommand::GoToInitialPos)) { // sprawdzam czy wartość znaku mieści się w przedziale enumeratora RobotCommand
-        //receivedData = "";                                // zeruję globalną zmienną na dane
-        //receivedData += static_cast<char>(dataInt);       // znak zamieniony na integer, rzutuję na char i dopisuję do zmiennej globalnej
         receivedData = static_cast<char>(dataInt);        // znak zamieniony na integer, rzutuję na char i dopisuję do zmiennej globalnej
+        timeDataReceive = timeNow;							// zapis czasu odebrania danych
         Serial.println("I got some data from serial port!");
       }
     }
@@ -400,20 +406,29 @@ void readBluetoothData() {
     if ((dataChar != '\n') && (dataChar != '\r')) {       // jeśli odczytany bajt nie jest znakiem nowej linii ani karetką
       int dataInt = static_cast<int>(dataChar);           // rzutuję na integer
       if ((dataInt >= RobotCommand::Stand) && (dataInt <= RobotCommand::GoToInitialPos)) { // sprawdzam czy wartość znaku mieści się w przedziale enumeratora RobotCommand
-        //receivedData = "";                                // zeruję globalną zmienną na dane
-        //receivedData += static_cast<char>(dataInt);       // znak zamieniony na integer, rzutuję na char i dopisuję do zmiennej globalnej
         receivedData = dataChar;                          // zapisuję do zmiennej globalnej
+        timeDataReceive = timeNow;							// zapis czasu odebrania danych
       }
     }
-    //receivedData = btSerial.readString();   // zapis serii odebranych bajtów do zmiennej
+  }
+}
+
+// Sprawdza kiedy ostatnio odebrano dane
+void checkDataReceiveTimeout() {
+  unsigned long timeDiff = timeNow - timeDataReceive;
+  if (timeDiff >= SERIAL_TIMEOUT_CRITICAL) {	// jeśli przekroczono ostateczny czas oczekiwania
+    receivedData = static_cast<char>(RobotCommand::GoToInitialPos);
+  }
+  else if (timeDiff >= SERIAL_TIMEOUT) {		// jeśli przez chwilę nic nie odebrano
+    receivedData = static_cast<char>(RobotCommand::Stand);
   }
 }
 
 // Sprawdza czy buzzer nie powinien zostać wyłączony
 void checkIfBuzzerNeedsToGoOff() {
-  timeNow = millis();
+  //timeNow = millis(); // przeniesiono na początek metody obsługującej wiele "wątków"
   if (buzzerDuration > 0) {
-    if (timeNow - timeSaved >= buzzerDuration) {
+    if (timeNow - timeBatteryCheck >= buzzerDuration) {
       buzzerOff();
     }
   }
@@ -421,9 +436,9 @@ void checkIfBuzzerNeedsToGoOff() {
 
 // Sprawdza stan baterii co około 10 sekund
 void checkBatteryVoltageEveryTenSeconds() {
-  //timeNow = millis();
-  if (timeNow - timeSaved >= 10000UL) {         // jeśli minęło więcej niż 10 sekund -> sprawdzenie napięcia baterii
-    timeSaved = timeNow;
+  //timeNow = millis(); // zapis millis na początku metody obsługującej wiele "wątków"
+  if (timeNow - timeBatteryCheck >= 10000UL) {         // jeśli minęło więcej niż 10 sekund -> sprawdzenie napięcia baterii
+    timeBatteryCheck = timeNow;
     checkBatteryState();
   }
 }
