@@ -38,18 +38,18 @@
 #define SERVOMAX_0 /*530*//*525*//*450*//*425*/410 // wg pomiarów - 62st. od pozycji środkowej (600-225+155 = 530) // zakres 28st. -> 90 + 14 = 104st.
 #define SERVOMIN_1 /*215*//*245*/230
 #define SERVOMAX_1 /*535*//*505*/520
-#define SERVOMIN_2 /*205*/275
-#define SERVOMAX_2 /*545*/475
+#define SERVOMIN_2 /*205*//*275*/290 //(38 -> 50)
+#define SERVOMAX_2 /*545*//*475*/460
 // ------------------------------------------------------
 //stany graniczne napięć baterii
 #define BATTERY_CRITICAL 6.68
 #define BATTERY_MEDIUM 7.11
 // ------------------------------------------------------
 //domyślna wartość ograniczenia (dla funkcji limitVal(value, limit))
-#define DEFAULT_VALUE_LIMIT /*73*/82
+#define DEFAULT_VALUE_LIMIT /*73*//*82*/74/*37*/
 // ------------------------------------------------------
 //pozycja kolan i bioder, przy której robot jest w pozycji stojącej (nie może być większe niż 49)
-#define STANDING_POSITION /*38*/45
+#define STANDING_POSITION /*38*//*45*/ /*36*/37 //35/*12*/
 // ------------------------------------------------------
 //buzzer
 #define BUZZER_PIN 12
@@ -58,7 +58,7 @@
 #define STEP 2
 // ------------------------------------------------------
 //port szeregowy
-#define SERIAL_TIMEOUT 600 //czas oczekiwania na komendę
+#define SERIAL_TIMEOUT 600/*proponowana wartość: 300*/ //czas oczekiwania na komendę
 #define SERIAL_TIMEOUT_CRITICAL 120000 //ostateczny czas oczekiwania na komendę
 // ------------------------------------------------------
 
@@ -743,11 +743,79 @@ void standToBack() {
 }
 
 void standToLeft() {
-  //
+  //moveLeftLegsToCenter();
+  //moveRightLegsToCenter();
+}
+
+void moveLeftLegsToCenter() {
+  for (int8_t i = 50; i < 75; i += STEP) {
+    pseudoThreadHandle();
+
+    LeftFrontBodyServo::setPosition(100 - i);
+    LeftMiddleBodyServo::setPosition(50);
+    LeftRearBodyServo::setPosition(i);
+
+    RightFrontBodyServo::setPosition(50);
+    RightMiddleBodyServo::setPosition(50);
+    RightRearBodyServo::setPosition(50);
+
+    int8_t j = map(i, 50, 100, STANDING_POSITION, 100);
+    leftSideUpDown(limitVal(j), 0b101);
+    rightSideUpDown(0, 0b000);
+  }
+  for (int8_t i = 75; i <= 100; i += STEP) {
+    pseudoThreadHandle();
+
+    LeftFrontBodyServo::setPosition(100 - i);
+    LeftMiddleBodyServo::setPosition(50);
+    LeftRearBodyServo::setPosition(i);
+
+    RightFrontBodyServo::setPosition(50);
+    RightMiddleBodyServo::setPosition(50);
+    RightRearBodyServo::setPosition(50);
+
+    int8_t j = map(i, 50, 100, 100, STANDING_POSITION);
+    leftSideUpDown(limitVal(j), 0b101);
+    rightSideUpDown(0, 0b000);
+  }
+}
+
+void moveRightLegsToCenter() {
+  for (int8_t i = 50; i < 75; i += STEP) {
+    pseudoThreadHandle();
+
+    LeftFrontBodyServo::setPosition(0);
+    LeftMiddleBodyServo::setPosition(50);
+    LeftRearBodyServo::setPosition(100);
+
+    RightFrontBodyServo::setPosition(i);
+    RightMiddleBodyServo::setPosition(50);
+    RightRearBodyServo::setPosition(100 - i);
+
+    int8_t j = map(i, 50, 100, STANDING_POSITION, 100);
+    leftSideUpDown(0, 0b000);
+    rightSideUpDown(limitVal(j), 0b101);
+  }
+  for (int8_t i = 75; i <= 100; i += STEP) {
+    pseudoThreadHandle();
+
+    LeftFrontBodyServo::setPosition(0);
+    LeftMiddleBodyServo::setPosition(50);
+    LeftRearBodyServo::setPosition(100);
+
+    RightFrontBodyServo::setPosition(i);
+    RightMiddleBodyServo::setPosition(50);
+    RightRearBodyServo::setPosition(100 - i);
+
+    int8_t j = map(i, 50, 100, 100, STANDING_POSITION);
+    leftSideUpDown(0, 0b000);
+    rightSideUpDown(limitVal(j), 0b101);
+  }
 }
 
 void standToRight() {
-  //
+  //moveLeftLegsToCenter();
+  //moveRightLegsToCenter();
 }
 
 void standToTurnLeft() {
