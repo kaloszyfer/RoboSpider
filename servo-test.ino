@@ -285,158 +285,128 @@ struct LeftRearKneeServo
 // Struktura odwzorowująca prawą przednią kończynę
 struct RightFrontLeg {
 public:
-	void setPosition(int8_t horizontalPos, int8_t verticalPos) {
-		_bodyPosition = horizontalPos;
-		_hipPosition = verticalPos;
-		_kneePosition = 100 - verticalPos;
-		RightFrontBodyServo::setPosition(_bodyPosition);
-		RightFrontHipServo::setPosition(_hipPosition);
-		RightFrontKneeServo::setPosition(_kneePosition);
-	}
-	void setPosition(int8_t horizontalPos, int8_t hipPos, int8_t kneePos) {
-		_bodyPosition = horizontalPos;
-		_hipPosition = hipPos;
-		_kneePosition = kneePos;
-		RightFrontBodyServo::setPosition(_bodyPosition);
-		RightFrontHipServo::setPosition(_hipPosition);
-		RightFrontKneeServo::setPosition(_kneePosition);
-	}
-	inline int8_t bodyPosition() { return _bodyPosition; }
-	inline int8_t hipPosition() { return _hipPosition; }
-	inline int8_t kneePosition() { return _kneePosition; }
+  void setPosition(int8_t horizontalPos, int8_t verticalPos) {
+    setPosition(horizontalPos, verticalPos, 100 - verticalPos);
+  }
+  void setPosition(int8_t horizontalPos, int8_t hipPos, int8_t kneePos) {
+    _bodyPosition = horizontalPos;
+    _hipPosition = hipPos;
+    _kneePosition = kneePos;
+    RightFrontBodyServo::setPosition(_bodyPosition);
+    RightFrontHipServo::setPosition(_hipPosition);
+    RightFrontKneeServo::setPosition(_kneePosition);
+  }
+  inline int8_t bodyPosition() { return _bodyPosition; }
+  inline int8_t hipPosition() { return _hipPosition; }
+  inline int8_t kneePosition() { return _kneePosition; }
 private:
-	int8_t _bodyPosition = 0, _hipPosition = 100, _kneePosition = 0;
+  int8_t _bodyPosition = 0, _hipPosition = 100, _kneePosition = 0;
 };
 
 // Struktura odwzorowująca prawą środkową kończynę
 struct RightMiddleLeg {
 public:
-	void setPosition(int8_t horizontalPos, int8_t verticalPos) {
-		_bodyPosition = horizontalPos;
-		_hipPosition = verticalPos;
-		_kneePosition = 100 - verticalPos;
-		RightMiddleBodyServo::setPosition(_bodyPosition);
-		RightMiddleHipServo::setPosition(_hipPosition);
-		RightMiddleKneeServo::setPosition(_kneePosition);
-	}
-	void setPosition(int8_t horizontalPos, int8_t hipPos, int8_t kneePos) {
-		_bodyPosition = horizontalPos;
-		_hipPosition = hipPos;
-		_kneePosition = kneePos;
-		RightMiddleBodyServo::setPosition(_bodyPosition);
-		RightMiddleHipServo::setPosition(_hipPosition);
-		RightMiddleKneeServo::setPosition(_kneePosition);
-	}
-	inline int8_t bodyPosition() { return _bodyPosition; }
-	inline int8_t hipPosition() { return _hipPosition; }
-	inline int8_t kneePosition() { return _kneePosition; }
+  void setPosition(int8_t horizontalPos, int8_t verticalPos) {
+    setPosition(horizontalPos, verticalPos, 100 - verticalPos);
+  }
+  void setPosition(int8_t horizontalPos, int8_t hipPos, int8_t kneePos) {
+    _bodyPosition = horizontalPos;
+    _hipPosition = hipPos;
+    _kneePosition = kneePos;
+    RightMiddleBodyServo::setPosition(_bodyPosition);
+    RightMiddleHipServo::setPosition(_hipPosition);
+    RightMiddleKneeServo::setPosition(_kneePosition);
+  }
+  inline int8_t bodyPosition() { return _bodyPosition; }
+  inline int8_t hipPosition() { return _hipPosition; }
+  inline int8_t kneePosition() { return _kneePosition; }
 private:
-	int8_t _bodyPosition = 0, _hipPosition = 100, _kneePosition = 0;
+  int8_t _bodyPosition = 0, _hipPosition = 100, _kneePosition = 0;
 };
 
 // Struktura odwzorowująca prawą tylną kończynę
 struct RightRearLeg {
 public:
-	void setPosition(int8_t horizontalPos, int8_t verticalPos) {
-		_bodyPosition = horizontalPos;
-		_hipPosition = verticalPos;
-		_kneePosition = 100 - verticalPos;
-		RightRearBodyServo::setPosition(_bodyPosition);
-		RightRearHipServo::setPosition(_hipPosition);
-		RightRearKneeServo::setPosition(_kneePosition);
-	}
-	void setPosition(int8_t horizontalPos, int8_t hipPos, int8_t kneePos) {
-		_bodyPosition = horizontalPos;
-		_hipPosition = hipPos;
-		_kneePosition = kneePos;
-		RightRearBodyServo::setPosition(_bodyPosition);
-		RightRearHipServo::setPosition(_hipPosition);
-		RightRearKneeServo::setPosition(_kneePosition);
-	}
-	inline int8_t bodyPosition() { return _bodyPosition; }
-	inline int8_t hipPosition() { return _hipPosition; }
-	inline int8_t kneePosition() { return _kneePosition; }
+  void setPosition(int8_t horizontalPos, int8_t verticalPos) {
+    setPosition(horizontalPos, verticalPos, 100 - verticalPos);
+  }
+  void setPosition(int8_t horizontalPos, int8_t hipPos, int8_t kneePos) {
+    _bodyPosition = horizontalPos;
+    _hipPosition = hipPos;
+    _kneePosition = kneePos;
+    RightRearBodyServo::setPosition(_bodyPosition);
+    RightRearHipServo::setPosition(_hipPosition);
+    RightRearKneeServo::setPosition(_kneePosition);
+  }
+  inline int8_t bodyPosition() { return _bodyPosition; }
+  inline int8_t hipPosition() { return _hipPosition; }
+  inline int8_t kneePosition() { return _kneePosition; }
 private:
-	int8_t _bodyPosition = 0, _hipPosition = 100, _kneePosition = 0;
+  int8_t _bodyPosition = 0, _hipPosition = 100, _kneePosition = 0;
 };
 
 
 // Struktura odwzorowująca lewą przednią kończynę
 struct LeftFrontLeg {
 public:
-	void setPosition(int8_t horizontalPos, int8_t verticalPos) {
-		_bodyPosition = horizontalPos;
-		_hipPosition = verticalPos;
-		_kneePosition = 100 - verticalPos;
-		LeftFrontBodyServo::setPosition(_bodyPosition);
-		LeftFrontHipServo::setPosition(_hipPosition);
-		LeftFrontKneeServo::setPosition(_kneePosition);
-	}
-	void setPosition(int8_t horizontalPos, int8_t hipPos, int8_t kneePos) {
-		_bodyPosition = horizontalPos;
-		_hipPosition = hipPos;
-		_kneePosition = kneePos;
-		LeftFrontBodyServo::setPosition(_bodyPosition);
-		LeftFrontHipServo::setPosition(_hipPosition);
-		LeftFrontKneeServo::setPosition(_kneePosition);
-	}
-	inline int8_t bodyPosition() { return _bodyPosition; }
-	inline int8_t hipPosition() { return _hipPosition; }
-	inline int8_t kneePosition() { return _kneePosition; }
+  void setPosition(int8_t horizontalPos, int8_t verticalPos) {
+    setPosition(horizontalPos, verticalPos, 100 - verticalPos);
+  }
+  void setPosition(int8_t horizontalPos, int8_t hipPos, int8_t kneePos) {
+    _bodyPosition = horizontalPos;
+    _hipPosition = hipPos;
+    _kneePosition = kneePos;
+    LeftFrontBodyServo::setPosition(_bodyPosition);
+    LeftFrontHipServo::setPosition(_hipPosition);
+    LeftFrontKneeServo::setPosition(_kneePosition);
+  }
+  inline int8_t bodyPosition() { return _bodyPosition; }
+  inline int8_t hipPosition() { return _hipPosition; }
+  inline int8_t kneePosition() { return _kneePosition; }
 private:
-	int8_t _bodyPosition = 0, _hipPosition = 100, _kneePosition = 0;
+  int8_t _bodyPosition = 0, _hipPosition = 100, _kneePosition = 0;
 };
 
 // Struktura odwzorowująca lewą środkową kończynę
 struct LeftMiddleLeg {
 public:
-	void setPosition(int8_t horizontalPos, int8_t verticalPos) {
-		_bodyPosition = horizontalPos;
-		_hipPosition = verticalPos;
-		_kneePosition = 100 - verticalPos;
-		LeftMiddleBodyServo::setPosition(_bodyPosition);
-		LeftMiddleHipServo::setPosition(_hipPosition);
-		LeftMiddleKneeServo::setPosition(_kneePosition);
-	}
-	void setPosition(int8_t horizontalPos, int8_t hipPos, int8_t kneePos) {
-		_bodyPosition = horizontalPos;
-		_hipPosition = hipPos;
-		_kneePosition = kneePos;
-		LeftMiddleBodyServo::setPosition(_bodyPosition);
-		LeftMiddleHipServo::setPosition(_hipPosition);
-		LeftMiddleKneeServo::setPosition(_kneePosition);
-	}
-	inline int8_t bodyPosition() { return _bodyPosition; }
-	inline int8_t hipPosition() { return _hipPosition; }
-	inline int8_t kneePosition() { return _kneePosition; }
+  void setPosition(int8_t horizontalPos, int8_t verticalPos) {
+    setPosition(horizontalPos, verticalPos, 100 - verticalPos);
+  }
+  void setPosition(int8_t horizontalPos, int8_t hipPos, int8_t kneePos) {
+    _bodyPosition = horizontalPos;
+    _hipPosition = hipPos;
+    _kneePosition = kneePos;
+    LeftMiddleBodyServo::setPosition(_bodyPosition);
+    LeftMiddleHipServo::setPosition(_hipPosition);
+    LeftMiddleKneeServo::setPosition(_kneePosition);
+  }
+  inline int8_t bodyPosition() { return _bodyPosition; }
+  inline int8_t hipPosition() { return _hipPosition; }
+  inline int8_t kneePosition() { return _kneePosition; }
 private:
-	int8_t _bodyPosition = 0, _hipPosition = 100, _kneePosition = 0;
+  int8_t _bodyPosition = 0, _hipPosition = 100, _kneePosition = 0;
 };
 
 // Struktura odwzorowująca lewą tylną kończynę
 struct LeftRearLeg {
 public:
-	void setPosition(int8_t horizontalPos, int8_t verticalPos) {
-		_bodyPosition = horizontalPos;
-		_hipPosition = verticalPos;
-		_kneePosition = 100 - verticalPos;
-		LeftRearBodyServo::setPosition(_bodyPosition);
-		LeftRearHipServo::setPosition(_hipPosition);
-		LeftRearKneeServo::setPosition(_kneePosition);
-	}
-	void setPosition(int8_t horizontalPos, int8_t hipPos, int8_t kneePos) {
-		_bodyPosition = horizontalPos;
-		_hipPosition = hipPos;
-		_kneePosition = kneePos;
-		LeftRearBodyServo::setPosition(_bodyPosition);
-		LeftRearHipServo::setPosition(_hipPosition);
-		LeftRearKneeServo::setPosition(_kneePosition);
-	}
-	inline int8_t bodyPosition() { return _bodyPosition; }
-	inline int8_t hipPosition() { return _hipPosition; }
-	inline int8_t kneePosition() { return _kneePosition; }
+  void setPosition(int8_t horizontalPos, int8_t verticalPos) {
+    setPosition(horizontalPos, verticalPos, 100 - verticalPos);
+  }
+  void setPosition(int8_t horizontalPos, int8_t hipPos, int8_t kneePos) {
+    _bodyPosition = horizontalPos;
+    _hipPosition = hipPos;
+    _kneePosition = kneePos;
+    LeftRearBodyServo::setPosition(_bodyPosition);
+    LeftRearHipServo::setPosition(_hipPosition);
+    LeftRearKneeServo::setPosition(_kneePosition);
+  }
+  inline int8_t bodyPosition() { return _bodyPosition; }
+  inline int8_t hipPosition() { return _hipPosition; }
+  inline int8_t kneePosition() { return _kneePosition; }
 private:
-	int8_t _bodyPosition = 0, _hipPosition = 100, _kneePosition = 0;
+  int8_t _bodyPosition = 0, _hipPosition = 100, _kneePosition = 0;
 };
 
 RightFrontLeg rightFrontLeg;
