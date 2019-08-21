@@ -48,18 +48,20 @@
 //domyślna wartość ograniczenia (dla funkcji limitVal(value, limit))
 #define DEFAULT_VALUE_LIMIT /*73*//*82*/74/*37*/
 // ------------------------------------------------------
-//pozycja kolan i bioder, przy której robot jest w pozycji stojącej (nie może być większe niż 49)
+//pozycja kolan i bioder, przy której robot jest w pozycji stojącej (nie może być większe niż 49 i mniejsze niż STRAFE_STEP_ANGLE)
 #define STANDING_POSITION /*38*//*45*/ /*36*/37 //35/*12*/
-// ------------------------------------------------------
-//buzzer
-#define BUZZER_PIN 12
 // ------------------------------------------------------
 //prędkość
 #define STEP 2
+//kąt odchylenia łydki przy ruchu w lewo lub w prawo
+#define STRAFE_STEP_ANGLE 16
 // ------------------------------------------------------
 //port szeregowy
 #define SERIAL_TIMEOUT 600/*proponowana wartość: 300*/ //czas oczekiwania na komendę
 #define SERIAL_TIMEOUT_CRITICAL 120000 //ostateczny czas oczekiwania na komendę
+// ------------------------------------------------------
+//buzzer
+#define BUZZER_PIN 12
 // ------------------------------------------------------
 
 enum RobotState   // stany robota
@@ -596,11 +598,7 @@ void checkBatteryState() {
 // Przypisuje ostatnio odebraną komendę do zmiennej
 void setLastCommandValue() {
   if ((state != Inactive) && (battState != BatteryLow)) {
-    //if (receivedData.length()) {                    // jeśli jakiekolwiek dane odebrane
-      //lastCommand = static_cast<RobotCommand>(receivedData.charAt(0));  // zrzutowanie pierwszego bajtu ostatnio odebranej serii na enum komendy robota
-      lastCommand = static_cast<RobotCommand>(receivedData);            // zrzutowanie pierwszego bajtu ostatnio odebranej serii na enum komendy robota
-      //receivedData = "";
-    //}
+    lastCommand = static_cast<RobotCommand>(receivedData);            // zrzutowanie ostatnio odebranego bajtu na enum komendy robota
   }
   else {
     if (lastCommand != GoToInitialPos) {
@@ -880,27 +878,25 @@ void standToLeft() {
   moveRightLegsFromStandToSide();
   for (int8_t i = 0; i < 25; i += STEP) {
     pseudoThreadHandle();
-    int8_t j = map(i, 0, 50, 100 - STANDING_POSITION, 100 - STANDING_POSITION - 25);
-	int8_t k = map(i, 0, 50, 100 - STANDING_POSITION, 100 - STANDING_POSITION + 25);
+    int8_t j = map(i, 0, 50, 100 - STANDING_POSITION, 100 - STANDING_POSITION - STRAFE_STEP_ANGLE);
+    int8_t k = map(i, 0, 50, 100 - STANDING_POSITION, 100 - STANDING_POSITION + STRAFE_STEP_ANGLE);
     leftFrontLeg.setPosition(0, STANDING_POSITION, j);
     leftMiddleLeg.setPosition(50, STANDING_POSITION + i, k);
     leftRearLeg.setPosition(100, STANDING_POSITION, j);
     rightFrontLeg.setPosition(0, STANDING_POSITION + i, j);
-	rightMiddleLeg.setPosition(50, STANDING_POSITION, k);
-	rightRearLeg.setPosition(100, STANDING_POSITION + i, j);
-	delay(10);
+    rightMiddleLeg.setPosition(50, STANDING_POSITION, k);
+    rightRearLeg.setPosition(100, STANDING_POSITION + i, j);
   }
   for (int8_t i = 25; i < 50; i += STEP) {
     pseudoThreadHandle();
-    int8_t j = map(i, 0, 50, 100 - STANDING_POSITION, 100 - STANDING_POSITION - 25);
-    int8_t k = map(i, 0, 50, 100 - STANDING_POSITION, 100 - STANDING_POSITION + 25);
+    int8_t j = map(i, 0, 50, 100 - STANDING_POSITION, 100 - STANDING_POSITION - STRAFE_STEP_ANGLE);
+    int8_t k = map(i, 0, 50, 100 - STANDING_POSITION, 100 - STANDING_POSITION + STRAFE_STEP_ANGLE);
     leftFrontLeg.setPosition(0, STANDING_POSITION, j);
     leftMiddleLeg.setPosition(50, STANDING_POSITION + 50 - i, k);
     leftRearLeg.setPosition(100, STANDING_POSITION, j);
     rightFrontLeg.setPosition(0, STANDING_POSITION + 50 - i, j);
     rightMiddleLeg.setPosition(50, STANDING_POSITION, k);
     rightRearLeg.setPosition(100, STANDING_POSITION + 50 - i, j);
-	delay(10);
   }
 }
 
@@ -918,7 +914,7 @@ void moveLeftLegsFromStandToSide() {
 
     int8_t j = map(i, 50, 100, STANDING_POSITION, 100);
     leftSideUpDown(limitVal(j), 0b101);
-    rightSideUpDown(0, 0b000); delay(10);
+    rightSideUpDown(0, 0b000);
   }
   for (int8_t i = 75; i <= 100; i += STEP) {
     pseudoThreadHandle();
@@ -933,7 +929,7 @@ void moveLeftLegsFromStandToSide() {
 
     int8_t j = map(i, 50, 100, 100, STANDING_POSITION);
     leftSideUpDown(limitVal(j), 0b101);
-    rightSideUpDown(0, 0b000); delay(10);
+    rightSideUpDown(0, 0b000);
   }
 }
 
@@ -951,7 +947,7 @@ void moveRightLegsFromStandToSide() {
 
     int8_t j = map(i, 50, 100, STANDING_POSITION, 100);
     leftSideUpDown(0, 0b000);
-    rightSideUpDown(limitVal(j), 0b101); delay(10);
+    rightSideUpDown(limitVal(j), 0b101);
   }
   for (int8_t i = 75; i <= 100; i += STEP) {
     pseudoThreadHandle();
@@ -966,7 +962,7 @@ void moveRightLegsFromStandToSide() {
 
     int8_t j = map(i, 50, 100, 100, STANDING_POSITION);
     leftSideUpDown(0, 0b000);
-    rightSideUpDown(limitVal(j), 0b101); delay(10);
+    rightSideUpDown(limitVal(j), 0b101);
   }
 }
 
@@ -975,29 +971,26 @@ void standToRight() {
   moveRightLegsFromStandToSide();
   for (int8_t i = 0; i < 25; i += STEP) {
     pseudoThreadHandle();
-    int8_t j = map(i, 0, 50, 100 - STANDING_POSITION, 100 - STANDING_POSITION - 25);
-	int8_t k = map(i, 0, 50, 100 - STANDING_POSITION, 100 - STANDING_POSITION + 25);
+    int8_t j = map(i, 0, 50, 100 - STANDING_POSITION, 100 - STANDING_POSITION - STRAFE_STEP_ANGLE);
+    int8_t k = map(i, 0, 50, 100 - STANDING_POSITION, 100 - STANDING_POSITION + STRAFE_STEP_ANGLE);
     leftFrontLeg.setPosition(0, STANDING_POSITION + i, j);
     leftMiddleLeg.setPosition(50, STANDING_POSITION, k);
     leftRearLeg.setPosition(100, STANDING_POSITION + i, j);
     rightFrontLeg.setPosition(0, STANDING_POSITION, j);
-	rightMiddleLeg.setPosition(50, STANDING_POSITION + i, k);
-	rightRearLeg.setPosition(100, STANDING_POSITION, j);
-	delay(10);
+    rightMiddleLeg.setPosition(50, STANDING_POSITION + i, k);
+    rightRearLeg.setPosition(100, STANDING_POSITION, j);
   }
   for (int8_t i = 25; i < 50; i += STEP) {
     pseudoThreadHandle();
-    int8_t j = map(i, 0, 50, 100 - STANDING_POSITION, 100 - STANDING_POSITION - 25);
-    int8_t k = map(i, 0, 50, 100 - STANDING_POSITION, 100 - STANDING_POSITION + 25);
-	leftFrontLeg.setPosition(0, STANDING_POSITION + 50 - i, j);
-	leftMiddleLeg.setPosition(50, STANDING_POSITION, k);
-	leftRearLeg.setPosition(100, STANDING_POSITION + 50 - i, j);
-	rightFrontLeg.setPosition(0, STANDING_POSITION, j);
-	rightMiddleLeg.setPosition(50, STANDING_POSITION + 50 - i, k);
-	rightRearLeg.setPosition(100, STANDING_POSITION, j);
-	delay(10);
+    int8_t j = map(i, 0, 50, 100 - STANDING_POSITION, 100 - STANDING_POSITION - STRAFE_STEP_ANGLE);
+    int8_t k = map(i, 0, 50, 100 - STANDING_POSITION, 100 - STANDING_POSITION + STRAFE_STEP_ANGLE);
+    leftFrontLeg.setPosition(0, STANDING_POSITION + 50 - i, j);
+    leftMiddleLeg.setPosition(50, STANDING_POSITION, k);
+    leftRearLeg.setPosition(100, STANDING_POSITION + 50 - i, j);
+    rightFrontLeg.setPosition(0, STANDING_POSITION, j);
+    rightMiddleLeg.setPosition(50, STANDING_POSITION + 50 - i, k);
+    rightRearLeg.setPosition(100, STANDING_POSITION, j);
   }
-  //delay(3000);
 }
 
 void standToTurnLeft() {
@@ -1206,78 +1199,72 @@ void backToStand() {
 void stillLeft() {
   for (int8_t i = 0; i < 50; i += STEP) {
     pseudoThreadHandle();
-    int8_t j = map(i, 0, 100, 100 - STANDING_POSITION - 25, 100 - STANDING_POSITION + 25);
-    int8_t k = map(i, 0, 100, 100 - STANDING_POSITION + 25, 100 - STANDING_POSITION - 25);
+    int8_t j = map(i, 0, 100, 100 - STANDING_POSITION - STRAFE_STEP_ANGLE, 100 - STANDING_POSITION + STRAFE_STEP_ANGLE);
+    int8_t k = map(i, 0, 100, 100 - STANDING_POSITION + STRAFE_STEP_ANGLE, 100 - STANDING_POSITION - STRAFE_STEP_ANGLE);
     leftFrontLeg.setPosition(0, limitVal(STANDING_POSITION + i), j);
     leftMiddleLeg.setPosition(50, STANDING_POSITION, k);
     leftRearLeg.setPosition(100, limitVal(STANDING_POSITION + i), j);
     rightFrontLeg.setPosition(0, STANDING_POSITION, j);
     rightMiddleLeg.setPosition(50, limitVal(STANDING_POSITION + i), k);
     rightRearLeg.setPosition(100, STANDING_POSITION, j);
-	delay(10);
   }
   for (int8_t i = 50; i < 100; i += STEP) {
     pseudoThreadHandle();
-    int8_t j = map(i, 0, 100, 100 - STANDING_POSITION - 25, 100 - STANDING_POSITION + 25);
-    int8_t k = map(i, 0, 100, 100 - STANDING_POSITION + 25, 100 - STANDING_POSITION - 25);
+    int8_t j = map(i, 0, 100, 100 - STANDING_POSITION - STRAFE_STEP_ANGLE, 100 - STANDING_POSITION + STRAFE_STEP_ANGLE);
+    int8_t k = map(i, 0, 100, 100 - STANDING_POSITION + STRAFE_STEP_ANGLE, 100 - STANDING_POSITION - STRAFE_STEP_ANGLE);
     leftFrontLeg.setPosition(0, limitVal(STANDING_POSITION + 100 - i), j);
     leftMiddleLeg.setPosition(50, STANDING_POSITION, k);
     leftRearLeg.setPosition(100, limitVal(STANDING_POSITION + 100 - i), j);
     rightFrontLeg.setPosition(0, STANDING_POSITION, j);
     rightMiddleLeg.setPosition(50, limitVal(STANDING_POSITION + 100 - i), k);
     rightRearLeg.setPosition(100, STANDING_POSITION, j);
-	delay(10);
   }
   for (int8_t i = 100; i > 50; i -= STEP) {
     pseudoThreadHandle();
-    int8_t j = map(i, 0, 100, 100 - STANDING_POSITION - 25, 100 - STANDING_POSITION + 25);
-    int8_t k = map(i, 0, 100, 100 - STANDING_POSITION + 25, 100 - STANDING_POSITION - 25);
+    int8_t j = map(i, 0, 100, 100 - STANDING_POSITION - STRAFE_STEP_ANGLE, 100 - STANDING_POSITION + STRAFE_STEP_ANGLE);
+    int8_t k = map(i, 0, 100, 100 - STANDING_POSITION + STRAFE_STEP_ANGLE, 100 - STANDING_POSITION - STRAFE_STEP_ANGLE);
     leftFrontLeg.setPosition(0, STANDING_POSITION, j);
     leftMiddleLeg.setPosition(50, limitVal(STANDING_POSITION + 100 - i), k);
     leftRearLeg.setPosition(100, STANDING_POSITION, j);
     rightFrontLeg.setPosition(0, limitVal(STANDING_POSITION + 100 - i), j);
     rightMiddleLeg.setPosition(50, STANDING_POSITION, k);
     rightRearLeg.setPosition(100, limitVal(STANDING_POSITION + 100 - i), j);
-	delay(10);
   }
   for (int8_t i = 50; i > 0; i -= STEP) {
     pseudoThreadHandle();
-    int8_t j = map(i, 0, 100, 100 - STANDING_POSITION - 25, 100 - STANDING_POSITION + 25);
-    int8_t k = map(i, 0, 100, 100 - STANDING_POSITION + 25, 100 - STANDING_POSITION - 25);
+    int8_t j = map(i, 0, 100, 100 - STANDING_POSITION - STRAFE_STEP_ANGLE, 100 - STANDING_POSITION + STRAFE_STEP_ANGLE);
+    int8_t k = map(i, 0, 100, 100 - STANDING_POSITION + STRAFE_STEP_ANGLE, 100 - STANDING_POSITION - STRAFE_STEP_ANGLE);
     leftFrontLeg.setPosition(0, STANDING_POSITION, j);
     leftMiddleLeg.setPosition(50, limitVal(STANDING_POSITION + i), k);
     leftRearLeg.setPosition(100, STANDING_POSITION, j);
     rightFrontLeg.setPosition(0, limitVal(STANDING_POSITION + i), j);
     rightMiddleLeg.setPosition(50, STANDING_POSITION, k);
     rightRearLeg.setPosition(100, limitVal(STANDING_POSITION + i), j);
-	delay(10);
   }
 }
 
 void leftToStand() {
   for (int8_t i = 0; i < 25; i += STEP) {
     pseudoThreadHandle();
-    int8_t j = map(i, 0, 50, 100 - STANDING_POSITION - 25, 100 - STANDING_POSITION);
-    int8_t k = map(i, 0, 50, 100 - STANDING_POSITION + 25, 100 - STANDING_POSITION);
+    int8_t j = map(i, 0, 50, 100 - STANDING_POSITION - STRAFE_STEP_ANGLE, 100 - STANDING_POSITION);
+    int8_t k = map(i, 0, 50, 100 - STANDING_POSITION + STRAFE_STEP_ANGLE, 100 - STANDING_POSITION);
     leftFrontLeg.setPosition(0, limitVal(STANDING_POSITION + i), j);
     leftMiddleLeg.setPosition(50, STANDING_POSITION, k);
     leftRearLeg.setPosition(100, limitVal(STANDING_POSITION + i), j);
     rightFrontLeg.setPosition(0, STANDING_POSITION, j);
     rightMiddleLeg.setPosition(50, limitVal(STANDING_POSITION + i), k);
     rightRearLeg.setPosition(100, STANDING_POSITION, j);
-	delay(10);
   }
   for (int8_t i = 25; i < 50; i += STEP) {
     pseudoThreadHandle();
-    int8_t j = map(i, 0, 50, 100 - STANDING_POSITION - 25, 100 - STANDING_POSITION);
-    int8_t k = map(i, 0, 50, 100 - STANDING_POSITION + 25, 100 - STANDING_POSITION);
+    int8_t j = map(i, 0, 50, 100 - STANDING_POSITION - STRAFE_STEP_ANGLE, 100 - STANDING_POSITION);
+    int8_t k = map(i, 0, 50, 100 - STANDING_POSITION + STRAFE_STEP_ANGLE, 100 - STANDING_POSITION);
     leftFrontLeg.setPosition(0, limitVal(STANDING_POSITION + 50 - i), j);
     leftMiddleLeg.setPosition(50, STANDING_POSITION, k);
     leftRearLeg.setPosition(100, limitVal(STANDING_POSITION + 50 - i), j);
     rightFrontLeg.setPosition(0, STANDING_POSITION, j);
     rightMiddleLeg.setPosition(50, limitVal(STANDING_POSITION + 50 - i), k);
     rightRearLeg.setPosition(100, STANDING_POSITION, j);
-	delay(10);
   }
   moveLeftLegsFromSideToStand();
   moveRightLegsFromSideToStand();
@@ -1297,7 +1284,7 @@ void moveLeftLegsFromSideToStand() {
 
     int8_t j = map(i, 0, 50, STANDING_POSITION, 100);
     leftSideUpDown(limitVal(j), 0b101);
-    rightSideUpDown(0, 0b000); delay(10);
+    rightSideUpDown(0, 0b000);
   }
   for (int8_t i = 25; i <= 50; i += STEP) {
     pseudoThreadHandle();
@@ -1312,7 +1299,7 @@ void moveLeftLegsFromSideToStand() {
 
     int8_t j = map(i, 0, 50, 100, STANDING_POSITION);
     leftSideUpDown(limitVal(j), 0b101);
-    rightSideUpDown(0, 0b000); delay(10);
+    rightSideUpDown(0, 0b000);
   }
 }
 
@@ -1330,7 +1317,7 @@ void moveRightLegsFromSideToStand() {
 
     int8_t j = map(i, 0, 50, STANDING_POSITION, 100);
     leftSideUpDown(0, 0b000);
-    rightSideUpDown(limitVal(j), 0b101); delay(10);
+    rightSideUpDown(limitVal(j), 0b101);
   }
   for (int8_t i = 25; i <= 50; i += STEP) {
     pseudoThreadHandle();
@@ -1345,85 +1332,79 @@ void moveRightLegsFromSideToStand() {
 
     int8_t j = map(i, 0, 50, 100, STANDING_POSITION);
     leftSideUpDown(0, 0b000);
-    rightSideUpDown(limitVal(j), 0b101); delay(10);
+    rightSideUpDown(limitVal(j), 0b101);
   }
 }
 
 void stillRight() {
   for (int8_t i = 0; i < 50; i += STEP) {
     pseudoThreadHandle();
-    int8_t j = map(i, 0, 100, 100 - STANDING_POSITION - 25, 100 - STANDING_POSITION + 25);
-    int8_t k = map(i, 0, 100, 100 - STANDING_POSITION + 25, 100 - STANDING_POSITION - 25);
+    int8_t j = map(i, 0, 100, 100 - STANDING_POSITION - STRAFE_STEP_ANGLE, 100 - STANDING_POSITION + STRAFE_STEP_ANGLE);
+    int8_t k = map(i, 0, 100, 100 - STANDING_POSITION + STRAFE_STEP_ANGLE, 100 - STANDING_POSITION - STRAFE_STEP_ANGLE);
     leftFrontLeg.setPosition(0, STANDING_POSITION, j);
     leftMiddleLeg.setPosition(50, limitVal(STANDING_POSITION + i), k);
     leftRearLeg.setPosition(100, STANDING_POSITION, j);
     rightFrontLeg.setPosition(0, limitVal(STANDING_POSITION + i), j);
     rightMiddleLeg.setPosition(50, STANDING_POSITION, k);
     rightRearLeg.setPosition(100, limitVal(STANDING_POSITION + i), j);
-	delay(10);
   }
   for (int8_t i = 50; i < 100; i += STEP) {
     pseudoThreadHandle();
-    int8_t j = map(i, 0, 100, 100 - STANDING_POSITION - 25, 100 - STANDING_POSITION + 25);
-    int8_t k = map(i, 0, 100, 100 - STANDING_POSITION + 25, 100 - STANDING_POSITION - 25);
+    int8_t j = map(i, 0, 100, 100 - STANDING_POSITION - STRAFE_STEP_ANGLE, 100 - STANDING_POSITION + STRAFE_STEP_ANGLE);
+    int8_t k = map(i, 0, 100, 100 - STANDING_POSITION + STRAFE_STEP_ANGLE, 100 - STANDING_POSITION - STRAFE_STEP_ANGLE);
     leftFrontLeg.setPosition(0, STANDING_POSITION, j);
     leftMiddleLeg.setPosition(50, limitVal(STANDING_POSITION + 100 - i), k);
     leftRearLeg.setPosition(100, STANDING_POSITION, j);
     rightFrontLeg.setPosition(0, limitVal(STANDING_POSITION + 100 - i), j);
     rightMiddleLeg.setPosition(50, STANDING_POSITION, k);
     rightRearLeg.setPosition(100, limitVal(STANDING_POSITION + 100 - i), j);
-	delay(10);
   }
   for (int8_t i = 100; i > 50; i -= STEP) {
     pseudoThreadHandle();
-    int8_t j = map(i, 0, 100, 100 - STANDING_POSITION - 25, 100 - STANDING_POSITION + 25);
-    int8_t k = map(i, 0, 100, 100 - STANDING_POSITION + 25, 100 - STANDING_POSITION - 25);
+    int8_t j = map(i, 0, 100, 100 - STANDING_POSITION - STRAFE_STEP_ANGLE, 100 - STANDING_POSITION + STRAFE_STEP_ANGLE);
+    int8_t k = map(i, 0, 100, 100 - STANDING_POSITION + STRAFE_STEP_ANGLE, 100 - STANDING_POSITION - STRAFE_STEP_ANGLE);
     leftFrontLeg.setPosition(0, limitVal(STANDING_POSITION + 100 - i), j);
     leftMiddleLeg.setPosition(50, STANDING_POSITION, k);
     leftRearLeg.setPosition(100, limitVal(STANDING_POSITION + 100 - i), j);
     rightFrontLeg.setPosition(0, STANDING_POSITION, j);
     rightMiddleLeg.setPosition(50, limitVal(STANDING_POSITION + 100 - i), k);
     rightRearLeg.setPosition(100, STANDING_POSITION, j);
-	delay(10);
   }
   for (int8_t i = 50; i > 0; i -= STEP) {
     pseudoThreadHandle();
-    int8_t j = map(i, 0, 100, 100 - STANDING_POSITION - 25, 100 - STANDING_POSITION + 25);
-    int8_t k = map(i, 0, 100, 100 - STANDING_POSITION + 25, 100 - STANDING_POSITION - 25);
+    int8_t j = map(i, 0, 100, 100 - STANDING_POSITION - STRAFE_STEP_ANGLE, 100 - STANDING_POSITION + STRAFE_STEP_ANGLE);
+    int8_t k = map(i, 0, 100, 100 - STANDING_POSITION + STRAFE_STEP_ANGLE, 100 - STANDING_POSITION - STRAFE_STEP_ANGLE);
     leftFrontLeg.setPosition(0, limitVal(STANDING_POSITION + i), j);
     leftMiddleLeg.setPosition(50, STANDING_POSITION, k);
     leftRearLeg.setPosition(100, limitVal(STANDING_POSITION + i), j);
     rightFrontLeg.setPosition(0, STANDING_POSITION, j);
     rightMiddleLeg.setPosition(50, limitVal(STANDING_POSITION + i), k);
     rightRearLeg.setPosition(100, STANDING_POSITION, j);
-	delay(10);
   }
 }
 
 void rightToStand() {
   for (int8_t i = 0; i < 25; i += STEP) {
     pseudoThreadHandle();
-    int8_t j = map(i, 0, 50, 100 - STANDING_POSITION - 25, 100 - STANDING_POSITION);
-    int8_t k = map(i, 0, 50, 100 - STANDING_POSITION + 25, 100 - STANDING_POSITION);
+    int8_t j = map(i, 0, 50, 100 - STANDING_POSITION - STRAFE_STEP_ANGLE, 100 - STANDING_POSITION);
+    int8_t k = map(i, 0, 50, 100 - STANDING_POSITION + STRAFE_STEP_ANGLE, 100 - STANDING_POSITION);
     leftFrontLeg.setPosition(0, STANDING_POSITION, j);
     leftMiddleLeg.setPosition(50, limitVal(STANDING_POSITION + i), k);
     leftRearLeg.setPosition(100, STANDING_POSITION, j);
     rightFrontLeg.setPosition(0, limitVal(STANDING_POSITION + i), j);
     rightMiddleLeg.setPosition(50, STANDING_POSITION, k);
     rightRearLeg.setPosition(100, limitVal(STANDING_POSITION + i), j);
-	delay(10);
   }
   for (int8_t i = 25; i < 50; i += STEP) {
     pseudoThreadHandle();
-    int8_t j = map(i, 0, 50, 100 - STANDING_POSITION - 25, 100 - STANDING_POSITION);
-    int8_t k = map(i, 0, 50, 100 - STANDING_POSITION + 25, 100 - STANDING_POSITION);
+    int8_t j = map(i, 0, 50, 100 - STANDING_POSITION - STRAFE_STEP_ANGLE, 100 - STANDING_POSITION);
+    int8_t k = map(i, 0, 50, 100 - STANDING_POSITION + STRAFE_STEP_ANGLE, 100 - STANDING_POSITION);
     leftFrontLeg.setPosition(0, STANDING_POSITION, j);
     leftMiddleLeg.setPosition(50, limitVal(STANDING_POSITION + 50 - i), k);
     leftRearLeg.setPosition(100, STANDING_POSITION, j);
     rightFrontLeg.setPosition(0, limitVal(STANDING_POSITION + 50 - i), j);
     rightMiddleLeg.setPosition(50, STANDING_POSITION, k);
     rightRearLeg.setPosition(100, limitVal(STANDING_POSITION + 50 - i), j);
-	delay(10);
   }
   moveLeftLegsFromSideToStand();
   moveRightLegsFromSideToStand();
