@@ -86,7 +86,6 @@ enum RobotCommand // rozkazy dla robota
     MoveRight,        // robot idzie w prawo
     TurnLeft,         // robot skręca w lewo
     TurnRight,        // robot skręca w prawo
-//    Calibrate,        // robot środkuje pozycje wszystkich serw (Należy trzymać robota w powietrzu i dać swobodę kończynom)
     GoToInitialPos    // robot wraca do pozycji początkowej
 };
 
@@ -114,7 +113,7 @@ struct RightFrontBodyServo
 {
   // Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
   static void setPosition(int8_t value) {
-    servoRight.write(map(value, 0, 100, /*120, 60*//*110, 70*/104, 76));
+    servoRight.write(map(value, 0, 100, 104, 76));
   }
 };
 
@@ -199,7 +198,7 @@ struct LeftFrontBodyServo
 {
   // Ustawia pozycję serwa (value - od 0 do 100, % odchylenia;)
   static void setPosition(int8_t value) {
-    servoLeft.write(map(value, 0, 100, /*60, 120*//*70, 110*/76, 104));
+    servoLeft.write(map(value, 0, 100, 76, 104));
   }
 };
 
