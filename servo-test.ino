@@ -8,8 +8,6 @@
 //BT połączone do pinów 5 i 4
 #include <SoftwareSerial.h>
 // ------------------------------------------------------
-
-// ------------------------------------------------------
 //adresy serw
 #define SERVO_RIGHT_REAR0NUM   2
 #define SERVO_RIGHT_REAR1NUM   1
@@ -29,27 +27,23 @@
 #define SERVO_LEFT_FRONT0NUM   3  //numer cyfrowego pinu - serwo bezpośrednio połączone do Arduino
 #define SERVO_LEFT_FRONT1NUM   9
 #define SERVO_LEFT_FRONT2NUM   8
-//minimalne i maksymalne długości impulsu
-//#define SERVOMIN  150 // minimalna długość impulsu (z 4096)
-//#define SERVOMAX  600 // minimalna długość impulsu (z 4096)
-//#define SERVOMID  375 //(SERVOMAX+SERVOMIN)/2 // wartość wyśrodkowana
-// 450pul. - 180st. -> Xpul. - 62st. -> X = 155pul. (62st.) // a 60st. to 150pul.
-#define SERVOMIN_0 /*220*//*225*//*300*//*325*/340 // wg pomiarów - 62st. od pozycji środkowej (150+225-155 = 220) // zakres 28st. -> 90 - 14 = 76st.
-#define SERVOMAX_0 /*530*//*525*//*450*//*425*/410 // wg pomiarów - 62st. od pozycji środkowej (600-225+155 = 530) // zakres 28st. -> 90 + 14 = 104st.
-#define SERVOMIN_1 /*215*//*245*/230
-#define SERVOMAX_1 /*535*//*505*/520
-#define SERVOMIN_2 /*205*//*275*/290 //(38 -> 50)
-#define SERVOMAX_2 /*545*//*475*/460
+//minimalne i maksymalne długości impulsu // 450pul. - 180st. -> Xpul. - 62st. -> X = 155pul. (62st.) // a 60st. to 150pul.
+#define SERVOMIN_0 340 // wg pomiarów - 62st. od pozycji środkowej (150+225-155 = 220) // zakres 28st. -> 90 - 14 = 76st.
+#define SERVOMAX_0 410 // wg pomiarów - 62st. od pozycji środkowej (600-225+155 = 530) // zakres 28st. -> 90 + 14 = 104st.
+#define SERVOMIN_1 230
+#define SERVOMAX_1 520
+#define SERVOMIN_2 290 //(38 -> 50)
+#define SERVOMAX_2 460
 // ------------------------------------------------------
 //stany graniczne napięć baterii
 #define BATTERY_CRITICAL 6.68
 #define BATTERY_MEDIUM 7.11
 // ------------------------------------------------------
 //domyślna wartość ograniczenia (dla funkcji limitVal(value, limit))
-#define DEFAULT_VALUE_LIMIT /*73*//*82*/74/*37*/
+#define DEFAULT_VALUE_LIMIT 74
 // ------------------------------------------------------
 //pozycja kolan i bioder, przy której robot jest w pozycji stojącej (nie może być większe niż 49 i mniejsze niż STRAFE_STEP_ANGLE)
-#define STANDING_POSITION /*38*//*45*/ /*36*/37 //35/*12*/
+#define STANDING_POSITION 37
 // ------------------------------------------------------
 //prędkość
 #define STEP 2
@@ -57,7 +51,7 @@
 #define STRAFE_STEP_ANGLE 16
 // ------------------------------------------------------
 //port szeregowy
-#define SERIAL_TIMEOUT 600/*proponowana wartość: 300*/ //czas oczekiwania na komendę
+#define SERIAL_TIMEOUT 300 //czas oczekiwania na komendę
 #define SERIAL_TIMEOUT_CRITICAL 120000 //ostateczny czas oczekiwania na komendę
 // ------------------------------------------------------
 //buzzer
@@ -74,7 +68,6 @@ enum RobotState   // stany robota
     MovingRight,      // robot jest w ruchu w prawo
     TurningLeft,      // robot skręca w lewo
     TurningRight,     // robot skręca w prawo
-//    Calibrating,      // robot w trakcie kalibracji
     Inactive          // robot nieaktywny - powinien być w pozycji początkowej
 };
 
@@ -631,9 +624,6 @@ void robotMovement_CheckState() {
   case TurningRight:
     stateTurningRight();
     break;
-//  case Calibrating:
-//    stateCalibrating();
-//    break;
   case Inactive:
     stateInactive();
     break;
@@ -673,10 +663,6 @@ void stateStanding() {
     standToTurnRight();
     state = TurningRight;
     break;
-//  case Calibrate:
-//    standToCalibrate();
-//    state = Calibrating;
-//    break;
   case GoToInitialPos:
     standToInitialPos();
     state = Inactive;
@@ -761,19 +747,6 @@ void stateTurningRight() {
     break;
   }
 }
-
-// Sprawdza ostatnio odebraną komendę i zależnie od niej podejmuje odpowiednie działanie
-//void stateCalibrating() {
-//  switch (lastCommand) {
-//  case Calibrating:
-//    stillCalibrating();
-//    break;
-//  default:
-//    calibratingToStand();
-//    state = Standing;
-//    break;
-//  }
-//}
 
 // Kończy obsługę modułu Bluetooth, serw oraz ustawia flagę przetwarzania głównej pętli programu na false
 void stateInactive() {
@@ -1062,14 +1035,6 @@ void standToTurnRight() {
     rightSideUpDown(limitVal(j), 0b101);
   }
 }
-
-//void standToCalibrate() {
-//  servoRight.write(map(SERVOMID, SERVOMIN, SERVOMAX, 120, 60));
-//  servoLeft.write(map(SERVOMID, SERVOMIN, SERVOMAX, 60, 120));
-//  for (int8_t i = 0; i < 16; i += STEP) {
-//    servos.setPWM(i, 0, SERVOMID);
-//  }
-//}
 
 void standToInitialPos() {
   for (int8_t i = 50; i <= 100; i += /*STEP*/1) {
@@ -1517,18 +1482,6 @@ void turningRightToStand() {
     rightSideUpDown(limitVal(j), 0b010);
   }
 }
-
-//void stillCalibrating() {
-//  servoRight.write(map(SERVOMID, SERVOMIN, SERVOMAX, 120, 60));
-//  servoLeft.write(map(SERVOMID, SERVOMIN, SERVOMAX, 60, 120));
-//  for (int8_t i = 0; i < 16; i += STEP) {
-//    servos.setPWM(i, 0, SERVOMID);
-//  }
-//}
-
-//void calibratingToStand() {
-//  //
-//}
 
 void initialPosToStand() {
   for (int8_t i = 100; i >= 50; i -= /*STEP*/1) {
