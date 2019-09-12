@@ -537,6 +537,10 @@ void readBluetoothData() {
         timeDataReceive = timeNow;							// zapis czasu odebrania danych
       }
     }
+    // Test 4.3.:
+    //Serial.print("Received data on Bluetooth! Start of data: ");
+    //Serial.print(static_cast<int>(dataChar));
+    //Serial.println(". End of data.");
   }
 }
 
